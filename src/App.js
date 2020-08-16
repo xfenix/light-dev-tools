@@ -17,6 +17,7 @@ const ApplicationGlobalStyles = createGlobalStyle`
 body {
   font-family: 'Varta', sans-serif;
   background: #FBFBFF;
+  color: #040F16;
 }
 
 a {
@@ -43,6 +44,11 @@ h1 {
 .mainlayout__menu {
   box-sizing: border-box;
   background: #d5f3ff;
+}
+
+.mainlayout__footer {
+  color: #ccc;
+  border-top: 1px solid #ccc;
 }
 
 .sitetitle {
@@ -85,13 +91,13 @@ function App() {
         <Reset />
         <ApplicationGlobalStyles />
         <main class="mainlayout">
-          <div className="mainlayout__topline">
+          <header className="mainlayout__topline">
             <div className="mainlayout__wrap">
               <NavLink to="/" className="sitetitle" activeClassName="">
                 <h1 class="sitetitle__title">🧑‍💻&nbsp;Light dev tools</h1>
               </NavLink>
             </div>
-          </div>
+          </header>
           <div className="mainlayout__menu">
             <div className="mainlayout__wrap">
               <nav class="topmenu">
@@ -130,6 +136,9 @@ function App() {
               </Route>
             </Switch>
           </div>
+          <footer class="mainlayout__wrap mainlayout__footer">
+            {new Date().getFullYear()} &copy; fancy copyright and footer text
+          </footer>
         </main>
       </Router>
     </>
