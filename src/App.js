@@ -1,13 +1,15 @@
-import React from 'react';
-import { createGlobalStyle } from 'styled-components';
-import { Reset } from 'styled-reset';
+import React from "react";
+import { createGlobalStyle } from "styled-components";
+import { Reset } from "styled-reset";
 import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link
+  NavLink,
 } from "react-router-dom";
-import Base64Component from './components/Base64';
+import Base64Component from "./components/app/Base64";
+
+// Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
 
 const ApplicationGlobalStyles = createGlobalStyle`
 @import url('https://fonts.googleapis.com/css2?family=Varta&display=swap');
@@ -44,12 +46,23 @@ h1 {
 }
 
 .sitetitle {
+  display: inline-block;
+  border-bottom: none;
+}
+
+.sitetitle:hover {
+  opacity: 0.7;
+}
+
+.sitetitle__title {
   font-size: 44px;
 }
 
 .topmenu {
   display: flex;
-  gap: 30px;
+  column-gap: 30px;
+  row-gap: 20px;
+  flex-wrap: wrap;
 }
 
 .topmenu__item {
@@ -58,6 +71,7 @@ h1 {
   padding-bottom: 3px;
 }
 
+.topmenu__item_active,
 .topmenu__item:hover {
   color: #040F16;
   border-bottom-color: #040F16;
@@ -73,24 +87,46 @@ function App() {
         <main class="mainlayout">
           <div className="mainlayout__topline">
             <div className="mainlayout__wrap">
-              <h1 class="sitetitle">🧑‍💻 Light dev tools</h1>
+              <NavLink to="/" className="sitetitle" activeClassName="">
+                <h1 class="sitetitle__title">🧑‍💻&nbsp;Light dev tools</h1>
+              </NavLink>
             </div>
           </div>
           <div className="mainlayout__menu">
             <div className="mainlayout__wrap">
               <nav class="topmenu">
-                <a href="/base64/" class="topmenu__item">Base 64</a>
-                <a href="/base64/" class="topmenu__item">Hash</a>
-                <a href="/base64/" class="topmenu__item">Url encode&decode</a>
-                <a href="/base64/" class="topmenu__item">Base 64 tools</a>
+                <NavLink
+                  to="/base64/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Base 64
+                </NavLink>
+                <NavLink
+                  to="/what/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Hash
+                </NavLink>
+                <NavLink
+                  to="/thehell/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Url encode&decode
+                </NavLink>
               </nav>
             </div>
           </div>
           <div className="mainlayout__wrap mainlayout__content">
             <Switch>
-              <Route path="/base64/"><Base64Component /></Route>
+              <Route path="/base64/">
+                <Base64Component />
+              </Route>
               <Route>
-                Hello, developer. This site contains bunch of useful and simple tools.
+                Hello, developer. This site contains bunch of useful and simple
+                tools.
               </Route>
             </Switch>
           </div>
