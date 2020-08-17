@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Textarea from "../generic/Textarea";
 import TextBlock from "../generic/TextBlock";
 import { Base64 } from "js-base64";
-import copy from "copy-to-clipboard";
 
 export default function Base64Component() {
   const [inputValue, setInput] = useState("");
@@ -14,7 +13,6 @@ export default function Base64Component() {
       let newOutputValue = Base64.encode(newValue);
       setOutput(newOutputValue);
       setInputStatusIsGood(true);
-      copy(outputValue);
     }
   };
   const setNewOutputValue = (newValue) => {
@@ -48,11 +46,13 @@ export default function Base64Component() {
         onChange={(event) => setNewInputValue(event.target.value)}
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
+        needClipboardButton={true}
       ></Textarea>
       <Textarea
         label="Base64"
         onChange={(event) => setNewOutputValue(event.target.value)}
         value={outputValue}
+        needClipboardButton={true}
       ></Textarea>
     </>
   );

@@ -75,7 +75,7 @@ h1 {
 
 .mainlayout__menu {
   box-sizing: border-box;
-  background: #d5f3ff;
+  background: #BDEBFB;
 }
 
 .mainlayout__footer {
@@ -105,14 +105,14 @@ h1 {
 
 .topmenu__item {
   font-size: 120%;
-  diplay: block;
+  display: block;
   padding-bottom: 3px;
 }
 
 .topmenu__item_active,
 .topmenu__item:hover {
-  color: #040F16;
-  border-bottom-color: #040F16;
+  color: ${settings.BLACK_COLOR};
+  border-bottom-color: ${settings.BLACK_COLOR};
 }
 `;
 

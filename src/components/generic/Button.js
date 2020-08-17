@@ -3,12 +3,18 @@ import styled from "styled-components";
 import * as settings from "../../Settings";
 
 const InnerButton = styled.button`
-  border-radius: 4px;
+  border-radius: ${settings.BORDER_RADIUS};
   padding: 10px 20px;
   cursor: pointer;
+  box-sizing: border-box;
+  background: #bcd8b7;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  outline: none;
 
   &:hover {
-    border-color: ${settings.BLACK_COLOR};
+    opacity: 0.7;
   }
 `;
 
