@@ -1,15 +1,17 @@
-import React from "react";
-import { createGlobalStyle } from "styled-components";
-import { Reset } from "styled-reset";
-import { ToastProvider } from "react-toast-notifications";
+import * as settings from "./Settings";
+
 import {
+  NavLink,
+  Route,
   BrowserRouter as Router,
   Switch,
-  Route,
-  NavLink,
 } from "react-router-dom";
+
 import Base64Component from "./components/app/Base64";
-import * as settings from "./Settings";
+import React from "react";
+import { Reset } from "styled-reset";
+import { ToastProvider } from "react-toast-notifications";
+import { createGlobalStyle } from "styled-components";
 
 // Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
 

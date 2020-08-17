@@ -1,9 +1,10 @@
+import * as settings from "../../Settings";
+
+import Button from "./Button";
 import React from "react";
+import copy from "copy-to-clipboard";
 import styled from "styled-components";
 import { useToasts } from "react-toast-notifications";
-import Button from "./Button";
-import * as settings from "../../Settings";
-import copy from "copy-to-clipboard";
 
 const TextareaWrapper = styled.div`
   position: relative;

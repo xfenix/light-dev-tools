@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import Textarea from "../generic/Textarea";
-import TextBlock from "../generic/TextBlockBefore";
+
 import { Base64 } from "js-base64";
+import TextBlock from "../generic/TextBlockBefore";
+import Textarea from "../generic/Textarea";
 
 export default function Base64Component() {
   const [inputValue, setInput] = useState("");

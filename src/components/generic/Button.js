@@ -1,6 +1,7 @@
+import * as settings from "../../Settings";
+
 import React from "react";
 import styled from "styled-components";
-import * as settings from "../../Settings";
 
 const InnerButton = styled.button`
   border-radius: ${settings.BORDER_RADIUS};
