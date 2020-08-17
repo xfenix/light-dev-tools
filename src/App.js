@@ -35,6 +35,37 @@ h1 {
   color: #040F16;
 }
 
+.typo p + p {
+  margin-top: 20px;
+}
+
+.typo ul {
+  margin-top: 10px;
+}
+
+.typo ul li {
+  margin-left: 0;
+  padding-left: 25px;
+  list-style-type: none;
+  position: relative;
+}
+
+.typo ul li + li {
+  margin-top: 7px;
+}
+
+.typo ul li:before {
+  left: 0;
+  top: 0;
+  position: absolute;
+  display: inline-block;
+  content: '\\2014';
+}
+
+.errorfield {
+  border-color: #B80C09;
+}
+
 .mainlayout__wrap {
   width: 700px;
   margin: 0 auto;
@@ -90,17 +121,17 @@ function App() {
       <Router>
         <Reset />
         <ApplicationGlobalStyles />
-        <main class="mainlayout">
+        <main className="mainlayout">
           <header className="mainlayout__topline">
             <div className="mainlayout__wrap">
               <NavLink to="/" className="sitetitle" activeClassName="">
-                <h1 class="sitetitle__title">🧑‍💻&nbsp;Light dev tools</h1>
+                <h1 className="sitetitle__title">🧑‍💻&nbsp;Light dev tools</h1>
               </NavLink>
             </div>
           </header>
           <div className="mainlayout__menu">
             <div className="mainlayout__wrap">
-              <nav class="topmenu">
+              <nav className="topmenu">
                 <NavLink
                   to="/base64/"
                   className="topmenu__item"
@@ -136,7 +167,7 @@ function App() {
               </Route>
             </Switch>
           </div>
-          <footer class="mainlayout__wrap mainlayout__footer">
+          <footer className="mainlayout__wrap mainlayout__footer">
             {new Date().getFullYear()} &copy; fancy copyright and footer text
           </footer>
         </main>

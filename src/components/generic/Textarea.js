@@ -23,7 +23,7 @@ export default function Textarea(props) {
   return (
     <>
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
-      <TextareaTag>{props.children}</TextareaTag>
+      <TextareaTag {...props}></TextareaTag>
     </>
   );
 }
