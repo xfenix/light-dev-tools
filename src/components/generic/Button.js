@@ -9,15 +9,17 @@ const InnerButton = styled.button`
   box-sizing: border-box;
   background: #bcd8b7;
   color: #fff;
-  font-weight: bold;
+  text-transform: uppercase;
   border: none;
   outline: none;
+  ${(props) => (props.small ? "font-size: 70%;" : "")}
+  ${(props) => (props.transparent ? "opacity: 0.6;" : "")}
 
   &:hover {
-    opacity: 0.7;
+    ${(props) => (props.transparent ? "opacity: 1;" : "")};
   }
 `;
 
 export default function Button(props) {
-  return <InnerButton>{props.children}</InnerButton>;
+  return <InnerButton {...props}>{props.children}</InnerButton>;
 }

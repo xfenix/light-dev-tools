@@ -1,21 +1,23 @@
 import React, { useState } from "react";
 import Textarea from "../generic/Textarea";
-import TextBlock from "../generic/TextBlock";
+import TextBlock from "../generic/TextBlockBefore";
 import { Base64 } from "js-base64";
 
 export default function Base64Component() {
   const [inputValue, setInput] = useState("");
   const [outputValue, setOutput] = useState("");
   const [isInputGood, setInputStatusIsGood] = useState(true);
-  const setNewInputValue = (newValue) => {
+  const setNewInputValue = (event) => {
+    const newValue = event.target.value;
     if (newValue != inputValue) {
+      const newOutputValue = Base64.encode(newValue);
       setInput(newValue);
-      let newOutputValue = Base64.encode(newValue);
       setOutput(newOutputValue);
       setInputStatusIsGood(true);
     }
   };
-  const setNewOutputValue = (newValue) => {
+  const setNewOutputValue = (event) => {
+    const newValue = event.target.value;
     if (newValue != outputValue) {
       setOutput(newValue);
       try {
@@ -23,7 +25,7 @@ export default function Base64Component() {
         setInputStatusIsGood(true);
       } catch (error) {
         setInput(
-          `Cant covert this data, seems base64 is not valid.\nWe got following error: ${error}`
+          `Cant decode to plain text, seems base64 payload is broken.\n\nWe got following error: [${error}]`
         );
         setInputStatusIsGood(false);
       }
@@ -35,24 +37,26 @@ export default function Base64Component() {
       <TextBlock>
         <p>Usage scenarios:</p>
         <ul>
-          <li>Place plain text in first input and get base64 from second.</li>
+          <li>Place plain text in first input and get base64 from second</li>
           <li>
-            Or place base64 encoded payload in second and get text in first.
+            Or place base64 encoded payload in second and get text in first
           </li>
         </ul>
       </TextBlock>
       <Textarea
         label="Plain text"
-        onChange={(event) => setNewInputValue(event.target.value)}
+        onChange={setNewInputValue}
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
-        needClipboardButton={true}
+        needClipboardButton
+        medium
       ></Textarea>
       <Textarea
         label="Base64"
-        onChange={(event) => setNewOutputValue(event.target.value)}
+        onChange={setNewOutputValue}
         value={outputValue}
-        needClipboardButton={true}
+        needClipboardButton
+        medium
       ></Textarea>
     </>
   );

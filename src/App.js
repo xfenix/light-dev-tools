@@ -1,6 +1,7 @@
 import React from "react";
 import { createGlobalStyle } from "styled-components";
 import { Reset } from "styled-reset";
+import { ToastProvider } from "react-toast-notifications";
 import {
   BrowserRouter as Router,
   Switch,
@@ -46,7 +47,7 @@ h1 {
 
 .typo ul li {
   margin-left: 0;
-  padding-left: 25px;
+  padding-left: 20px;
   list-style-type: none;
   position: relative;
 }
@@ -67,10 +68,14 @@ h1 {
   border-color: ${settings.RED_COLOR};
 }
 
+.fontsmall {
+  font-size: 80%;
+}
+
 .mainlayout__wrap {
   width: 700px;
   margin: 0 auto;
-  padding: 30px 20px;
+  padding: 25px 20px;
 }
 
 .mainlayout__menu {
@@ -81,6 +86,7 @@ h1 {
 .mainlayout__footer {
   color: ${settings.LIGHT_GREY_COLOR};
   border-top: 1px solid ${settings.LIGHT_GREY_COLOR};
+  font-size: 90%;
 }
 
 .sitetitle {
@@ -119,60 +125,67 @@ h1 {
 function App() {
   return (
     <>
-      <Router>
-        <Reset />
-        <ApplicationGlobalStyles />
-        <main className="mainlayout">
-          <header className="mainlayout__topline">
-            <div className="mainlayout__wrap">
-              <NavLink to="/" className="sitetitle" activeClassName="">
-                <h1 className="sitetitle__title">🧑‍💻&nbsp;Light dev tools</h1>
-              </NavLink>
+      <ToastProvider>
+        <Router>
+          <Reset />
+          <ApplicationGlobalStyles />
+          <main className="mainlayout">
+            <header className="mainlayout__topline">
+              <div className="mainlayout__wrap">
+                <NavLink to="/" className="sitetitle" activeClassName="">
+                  <h1 className="sitetitle__title">
+                    <span role="img">🧑‍💻</span>&nbsp;Light dev tools
+                  </h1>
+                </NavLink>
+              </div>
+            </header>
+            <div className="mainlayout__menu">
+              <div className="mainlayout__wrap">
+                <nav className="topmenu">
+                  <NavLink
+                    to="/base64/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Base 64
+                  </NavLink>
+                  <NavLink
+                    to="/what/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Hash
+                  </NavLink>
+                  <NavLink
+                    to="/thehell/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Url encode&decode
+                  </NavLink>
+                </nav>
+              </div>
             </div>
-          </header>
-          <div className="mainlayout__menu">
-            <div className="mainlayout__wrap">
-              <nav className="topmenu">
-                <NavLink
-                  to="/base64/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Base 64
-                </NavLink>
-                <NavLink
-                  to="/what/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Hash
-                </NavLink>
-                <NavLink
-                  to="/thehell/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Url encode&decode
-                </NavLink>
-              </nav>
+            <div className="mainlayout__wrap mainlayout__content">
+              <Switch>
+                <Route path="/base64/">
+                  <Base64Component />
+                </Route>
+                <Route>
+                  Hello, developer. This site contains bunch of useful and
+                  simple tools.
+                </Route>
+              </Switch>
             </div>
-          </div>
-          <div className="mainlayout__wrap mainlayout__content">
-            <Switch>
-              <Route path="/base64/">
-                <Base64Component />
-              </Route>
-              <Route>
-                Hello, developer. This site contains bunch of useful and simple
-                tools.
-              </Route>
-            </Switch>
-          </div>
-          <footer className="mainlayout__wrap mainlayout__footer">
-            {new Date().getFullYear()} &copy; fancy copyright and footer text
-          </footer>
-        </main>
-      </Router>
+            <footer className="mainlayout__wrap mainlayout__footer typo">
+              {new Date().getFullYear()} &copy; fancy copyright and footer text.
+              <br />
+              By big and strong corporation. Special thanks for mom. Also for
+              cat.
+            </footer>
+          </main>
+        </Router>
+      </ToastProvider>
     </>
   );
 }
