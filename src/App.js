@@ -8,6 +8,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import Base64Component from "./components/app/Base64";
+import * as settings from "./Settings";
 
 // Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
 
@@ -16,14 +17,14 @@ const ApplicationGlobalStyles = createGlobalStyle`
 
 body {
   font-family: 'Varta', sans-serif;
-  background: #FBFBFF;
+  background: ${settings.WHITE_COLOR};
   color: #040F16;
 }
 
 a {
-  color: #01BAEF;
+  color: ${settings.LIGHT_BLUE_COLOR};
   text-decoration: none;
-  border-bottom: 1px solid #01BAEF;
+  border-bottom: 1px solid ${settings.LIGHT_BLUE_COLOR};
 }
 
 a:hover {
@@ -63,7 +64,7 @@ h1 {
 }
 
 .errorfield {
-  border-color: #B80C09;
+  border-color: ${settings.RED_COLOR};
 }
 
 .mainlayout__wrap {
@@ -78,8 +79,8 @@ h1 {
 }
 
 .mainlayout__footer {
-  color: #ccc;
-  border-top: 1px solid #ccc;
+  color: ${settings.LIGHT_GREY_COLOR};
+  border-top: 1px solid ${settings.LIGHT_GREY_COLOR};
 }
 
 .sitetitle {

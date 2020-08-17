@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Textarea from "../generic/Textarea";
 import TextBlock from "../generic/TextBlock";
 import { Base64 } from "js-base64";
+import copy from "copy-to-clipboard";
 
 export default function Base64Component() {
   const [inputValue, setInput] = useState("");
@@ -10,8 +11,10 @@ export default function Base64Component() {
   const setNewInputValue = (newValue) => {
     if (newValue != inputValue) {
       setInput(newValue);
-      setOutput(Base64.encode(newValue));
+      let newOutputValue = Base64.encode(newValue);
+      setOutput(newOutputValue);
       setInputStatusIsGood(true);
+      copy(outputValue);
     }
   };
   const setNewOutputValue = (newValue) => {

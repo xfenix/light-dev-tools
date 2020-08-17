@@ -1,14 +1,18 @@
 import React from "react";
 import styled from "styled-components";
+import Button from "./Button";
+import * as settings from "../../Settings";
 
-const TextareaTag = styled.textarea.attrs((props) => ({
-  readonly: props.readonly,
-}))`
+const TextareaWrapper = styled.div`
+  position: relative;
+`;
+
+const TextareaTag = styled.textarea`
   box-sizing: border-box;
   width: 100%;
   height: 200px;
   border-radius: 5px;
-  border: 2px solid #0b4f6c;
+  border: 2px solid ${settings.BLACK_COLOR};
   padding: 10px;
   resize: vertical;
   margin-bottom: 25px;
@@ -23,7 +27,10 @@ export default function Textarea(props) {
   return (
     <>
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
-      <TextareaTag {...props}></TextareaTag>
+      <TextareaWrapper>
+        <Button>Hello World</Button>
+        <TextareaTag {...props}></TextareaTag>
+      </TextareaWrapper>
     </>
   );
 }
