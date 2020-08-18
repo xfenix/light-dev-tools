@@ -43,12 +43,15 @@ const ButtonWrap = styled.div`
 export default function Textarea(props) {
   const { addToast } = useToasts();
   const onClipboardButtonClick = () => {
-    copy(props.value ? props.value : props.defaultValue);
-    addToast("Copied!", {
-      appearance: "success",
-      autoDismiss: true,
-      autoDismissTimeout: 1000,
-    });
+    const currentFinalValue = props.value ? props.value : props.defaultValue;
+    if (currentFinalValue) {
+      copy(currentFinalValue);
+      addToast("Copied!", {
+        appearance: "success",
+        autoDismiss: true,
+        autoDismissTimeout: 1000,
+      });
+    }
   };
 
   return (
