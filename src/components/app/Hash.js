@@ -26,7 +26,7 @@ export default function HashComponent() {
   return (
     <>
       <TextBlock>
-        <p>Select hash type, provide input and get the hash.</p>
+        <p>Select hash type, provide input and get the hex digest.</p>
       </TextBlock>
       <RadioGroup titleValues={AVAIL_HASHES} onChange={hashSelect} />
       <Textarea
