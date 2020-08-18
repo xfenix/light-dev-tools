@@ -7,13 +7,15 @@ const AllRadios = styled.div`
   column-gap: 20px;
 `;
 
-const OneRadioWrap = styled.label`
+const OneRadioLabel = styled.label`
   display: flex;
   align-items: flex-start;
 `;
 
 const InputRadio = styled.input`
   margin: 0 5px 0 0;
+  padding: 0;
+  display: block;
 `;
 
 export default function RadioGroup(props) {
@@ -21,16 +23,16 @@ export default function RadioGroup(props) {
     <AllRadios>
       {props.titleValues.map((hashTitle, hashIndex) => {
         return (
-          <OneRadioWrap key={hashIndex}>
+          <OneRadioLabel key={hashIndex}>
             <InputRadio
-              {...(hashIndex === 0 ? { defaultChecked: true } : {})}
-              name="hashfn"
               type="radio"
+              name={props.groupKey}
               onChange={props.onChange ? props.onChange : () => {}}
               value={hashTitle}
+              {...(hashIndex === 0 ? { defaultChecked: true } : {})}
             />
             <div>{hashTitle}</div>
-          </OneRadioWrap>
+          </OneRadioLabel>
         );
       })}
     </AllRadios>

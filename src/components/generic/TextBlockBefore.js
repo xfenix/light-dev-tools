@@ -7,7 +7,8 @@ const InnerTextBlock = styled.div`
 
 const Header = styled.h4`
   font-size: 18px;
-  margin-bottom: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
 `;
 
 export default function TextBlockBefore(props) {

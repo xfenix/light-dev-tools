@@ -11,14 +11,16 @@ export default function HashComponent() {
   const [currentHash, setCurrentHash] = useState(AVAIL_HASHES[0]);
   const [inputValue, setInput] = useState("");
   const [outputValue, setOutput] = useState("");
-  const processHash = (event) => {
+
+  const onHashInput = (event) => {
     const newValue = event.target.value;
     if (newValue !== inputValue) {
       setInput(newValue);
       setOutput(new Hashes[currentHash]().hex(newValue));
     }
   };
-  const hashSelect = (event) => {
+
+  const onHashSelect = (event) => {
     setCurrentHash(event.target.value);
     setOutput(new Hashes[event.target.value]().hex(inputValue));
   };
@@ -28,10 +30,14 @@ export default function HashComponent() {
       <TextBlock>
         <p>Select hash type, provide input and get the hex digest.</p>
       </TextBlock>
-      <RadioGroup titleValues={AVAIL_HASHES} onChange={hashSelect} />
+      <RadioGroup
+        titleValues={AVAIL_HASHES}
+        onChange={onHashSelect}
+        groupKey="hashfn"
+      />
       <Textarea
         label="Input"
-        onChange={processHash}
+        onChange={onHashInput}
         value={inputValue}
         small
       ></Textarea>

@@ -8,10 +8,12 @@ import {
 } from "react-router-dom";
 
 import Base64Component from "./components/app/Base64";
+import EmojiComponent from "./components/app/Emoji";
 import HashComponent from "./components/app/Hash";
 import React from "react";
 import { Reset } from "styled-reset";
 import { ToastProvider } from "react-toast-notifications";
+import UrlencodeComponent from "./components/app/Urlencode";
 import { createGlobalStyle } from "styled-components";
 
 // Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
@@ -36,6 +38,11 @@ a:hover {
 h1 {
   font-size: 24px;
   color: #040F16;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
 }
 
 .typo p + p {
@@ -121,6 +128,10 @@ h1 {
   color: ${settings.BLACK_COLOR};
   border-bottom-color: ${settings.BLACK_COLOR};
 }
+
+.emoji-mart-emoji {
+  outline: none;
+}
 `;
 
 function App() {
@@ -161,11 +172,18 @@ function App() {
                     Hash
                   </NavLink>
                   <NavLink
-                    to="/thehell/"
+                    to="/tool/urlencode/"
                     className="topmenu__item"
                     activeClassName="topmenu__item_active"
                   >
                     Url encode&decode
+                  </NavLink>
+                  <NavLink
+                    to="/tool/emoji/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Emoji picker
                   </NavLink>
                 </nav>
               </div>
@@ -178,9 +196,21 @@ function App() {
                 <Route path="/tool/hash/">
                   <HashComponent />
                 </Route>
+                <Route path="/tool/urlencode/">
+                  <UrlencodeComponent />
+                </Route>
+                <Route path="/tool/emoji/">
+                  <EmojiComponent />
+                </Route>
                 <Route path="/">
-                  Hello, developer. This site contains bunch of useful and
-                  simple tools.
+                  <div className="typo">
+                    <h2>Hello</h2>
+                    <p>
+                      Dear developer, this site contains bunch of useful and
+                      simple tools.
+                    </p>
+                    <p>Use them for the greater good!</p>
+                  </div>
                 </Route>
               </Switch>
             </div>

@@ -7,6 +7,7 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "copy-to-clipboard": "^3.3.1",
+    "emoji-mart": "^3.0.0",
     "js-base64": "^3.4.5",
     "jshashes": "^1.0.8",
     "react": "^16.13.1",
