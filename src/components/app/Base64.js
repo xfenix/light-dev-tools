@@ -10,7 +10,7 @@ export default function Base64Component() {
   const [isInputGood, setInputStatusIsGood] = useState(true);
   const setNewInputValue = (event) => {
     const newValue = event.target.value;
-    if (newValue != inputValue) {
+    if (newValue !== inputValue) {
       const newOutputValue = Base64.encode(newValue);
       setInput(newValue);
       setOutput(newOutputValue);
@@ -19,7 +19,7 @@ export default function Base64Component() {
   };
   const setNewOutputValue = (event) => {
     const newValue = event.target.value;
-    if (newValue != outputValue) {
+    if (newValue !== outputValue) {
       setOutput(newValue);
       try {
         setInput(Base64.decode(newValue));
@@ -49,14 +49,14 @@ export default function Base64Component() {
         onChange={setNewInputValue}
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
-        needClipboardButton
+        hasClipboardButton
         medium
       ></Textarea>
       <Textarea
         label="Base64"
         onChange={setNewOutputValue}
         value={outputValue}
-        needClipboardButton
+        hasClipboardButton
         medium
       ></Textarea>
     </>

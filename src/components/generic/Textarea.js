@@ -14,7 +14,14 @@ const TextareaWrapper = styled.div`
 const TextareaTag = styled.textarea`
   box-sizing: border-box;
   width: 100%;
-  min-height: ${(props) => (props.medium ? "200px" : "auto")};
+  min-height: ${(props) =>
+    props.medium
+      ? "200px"
+      : props.small
+      ? "100px"
+      : props.smallest
+      ? "30px"
+      : "auto"};
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid ${settings.BLACK_COLOR};
   padding: 10px;
@@ -50,7 +57,7 @@ export default function Textarea(props) {
 
       <TextareaWrapper>
         <TextareaTag {...props}></TextareaTag>
-        {props.needClipboardButton ? (
+        {props.hasClipboardButton ? (
           <ButtonWrap>
             <Button onClick={onClipboardButtonClick} transparent small>
               Copy to clibpoard

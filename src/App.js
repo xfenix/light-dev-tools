@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import Base64Component from "./components/app/Base64";
+import HashComponent from "./components/app/Hash";
 import React from "react";
 import { Reset } from "styled-reset";
 import { ToastProvider } from "react-toast-notifications";
@@ -16,8 +17,6 @@ import { createGlobalStyle } from "styled-components";
 // Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
 
 const ApplicationGlobalStyles = createGlobalStyle`
-@import url('https://fonts.googleapis.com/css2?family=Varta&display=swap');
-
 body {
   font-family: 'Varta', sans-serif;
   background: ${settings.WHITE_COLOR};
@@ -136,7 +135,10 @@ function App() {
               <div className="mainlayout__wrap">
                 <NavLink to="/" className="sitetitle" activeClassName="">
                   <h1 className="sitetitle__title">
-                    <span role="img">🧑‍💻</span>&nbsp;Light dev tools
+                    <span role="img" aria-label="Software engineer">
+                      🧑‍💻
+                    </span>
+                    &nbsp;Light dev tools
                   </h1>
                 </NavLink>
               </div>
@@ -145,14 +147,14 @@ function App() {
               <div className="mainlayout__wrap">
                 <nav className="topmenu">
                   <NavLink
-                    to="/base64/"
+                    to="/tool/base64/"
                     className="topmenu__item"
                     activeClassName="topmenu__item_active"
                   >
                     Base 64
                   </NavLink>
                   <NavLink
-                    to="/what/"
+                    to="/tool/hash/"
                     className="topmenu__item"
                     activeClassName="topmenu__item_active"
                   >
@@ -170,10 +172,13 @@ function App() {
             </div>
             <div className="mainlayout__wrap mainlayout__content">
               <Switch>
-                <Route path="/base64/">
+                <Route path="/tool/base64/">
                   <Base64Component />
                 </Route>
-                <Route>
+                <Route path="/tool/hash/">
+                  <HashComponent />
+                </Route>
+                <Route path="/">
                   Hello, developer. This site contains bunch of useful and
                   simple tools.
                 </Route>

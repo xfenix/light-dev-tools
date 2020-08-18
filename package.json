@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^7.2.1",
     "copy-to-clipboard": "^3.3.1",
     "js-base64": "^3.4.5",
+    "jshashes": "^1.0.8",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router": "^5.2.0",
