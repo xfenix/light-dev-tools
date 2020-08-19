@@ -1,11 +1,6 @@
 import * as settings from "./Settings";
 
-import {
-  NavLink,
-  Route,
-  BrowserRouter as Router,
-  Switch,
-} from "react-router-dom";
+import { NavLink, Route, HashRouter as Router, Switch } from "react-router-dom";
 
 import Base64Component from "./components/app/Base64";
 import EmojiComponent from "./components/app/Emoji";
