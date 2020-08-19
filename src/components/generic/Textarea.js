@@ -10,7 +10,6 @@ const TextareaWrapper = styled.div`
   position: relative;
   margin-bottom: 25px;
 `;
-
 const TextareaTag = styled.textarea`
   box-sizing: border-box;
   width: 100%;
@@ -28,17 +27,17 @@ const TextareaTag = styled.textarea`
   resize: vertical;
   outline: none;
 `;
-
 const LabelTag = styled.label`
   margin-bottom: 5px;
   display: block;
 `;
-
-const ButtonWrap = styled.div`
+const ClipboardButtonWrap = styled.div`
   position: absolute;
   top: 2px;
   right: 2px;
 `;
+
+const ResetButtonWrap = styled.div``;
 
 export default function Textarea(props) {
   const { addToast } = useToasts();
@@ -61,14 +60,15 @@ export default function Textarea(props) {
       <TextareaWrapper>
         <TextareaTag {...props}></TextareaTag>
         {props.hasClipboardButton ? (
-          <ButtonWrap>
+          <ClipboardButtonWrap>
             <Button onClick={onClipboardButtonClick} transparent small>
               Copy to clibpoard
             </Button>
-          </ButtonWrap>
+          </ClipboardButtonWrap>
         ) : (
           ""
         )}
+        <ResetButtonWrap>123213</ResetButtonWrap>
       </TextareaWrapper>
     </>
   );
