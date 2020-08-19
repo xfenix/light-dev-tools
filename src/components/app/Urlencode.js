@@ -11,6 +11,7 @@ export default function UrlencodeComponent() {
   const setNewInputValue = (event) => {
     const newValue = event.target.value;
     if (newValue !== inputValue) {
+      setInput(newValue);
       setOutput(encodeURI(newValue));
       setInputStatusIsGood(true);
     }
@@ -19,8 +20,8 @@ export default function UrlencodeComponent() {
   const setNewOutputValue = (event) => {
     const newValue = event.target.value;
     if (newValue !== outputValue) {
-      setOutput(newValue);
       try {
+        setOutput(newValue);
         setInput(decodeURI(newValue));
         setInputStatusIsGood(true);
       } catch (error) {
@@ -39,7 +40,7 @@ export default function UrlencodeComponent() {
       </TextBlock>
       <Textarea
         label="Url to encode"
-        defaultValue={inputValue}
+        value={inputValue}
         className={isInputGood ? "" : "errorfield"}
         onChange={setNewInputValue}
         hasClipboardButton
@@ -47,7 +48,7 @@ export default function UrlencodeComponent() {
       ></Textarea>
       <Textarea
         label="Url to decode"
-        defaultValue={outputValue}
+        value={outputValue}
         onChange={setNewOutputValue}
         hasClipboardButton
         small
