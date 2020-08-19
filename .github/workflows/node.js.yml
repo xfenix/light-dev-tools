@@ -10,6 +10,9 @@ on:
     branches: [master]
 
 jobs:
+  env:
+    GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+
   build:
     runs-on: ubuntu-latest
 
@@ -19,8 +22,5 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.x
-      - run: |
-          git config user.email "ad@xfenix.ru"
-          git config user.name "Auto light-dev-tools publisher"
       - run: npm ci
-      - run: npm run deploy --if-present
+      - run: npm run deploy -u "Auto light-dev-tools publisher <ad@xfenix.ru>"
