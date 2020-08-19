@@ -23,4 +23,7 @@ jobs:
         with:
           node-version: 14.x
       - run: npm ci
-      - run: npm run deploy -u "Auto light-dev-tools publisher <ad@xfenix.ru>"
+      - run: |
+        git config --global user.email "ad@xfenix.ru"
+        git config --global user.name "Auto light-dev-tools publisher"
+        npm run deploy
