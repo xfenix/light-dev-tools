@@ -9,9 +9,6 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,7 +20,9 @@ jobs:
         with:
           node-version: 14.x
       - run: npm ci
-      - run: |
-          git config --global user.email "ad@xfenix.ru"
-          git config --global user.name "Auto light-dev-tools publisher"
-          npm run deploy
+      - run: npm run predeploy
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.REPO_TOKEN }}
+          publish_dir: ./build
