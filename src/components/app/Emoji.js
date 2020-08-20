@@ -10,6 +10,7 @@ import Textarea from "../generic/Textarea";
 const FlexWrap = styled.div`
   display: flex;
   column-gap: 30px;
+  row-gap: 30px;
 
   @media (max-width: 768px) {
     flex-direction: column-reverse;
