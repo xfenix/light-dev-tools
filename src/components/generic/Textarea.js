@@ -6,13 +6,20 @@ import copy from "copy-to-clipboard";
 import styled from "styled-components";
 import { useToasts } from "react-toast-notifications";
 
-const TextareaWrapper = styled.form`
-  position: relative;
-  margin-bottom: 25px;
-`;
-const TextareaTag = styled.textarea`
+const TextareaMainWrapper = styled.div`
   box-sizing: border-box;
   width: 100%;
+`;
+const TextareaInnerWrapper = styled.form`
+  position: relative;
+  height: 100%;
+  width: 100%;
+`;
+const TextareaTag = styled.textarea`
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   min-height: ${(props) =>
     props.medium
       ? "200px"
@@ -82,15 +89,14 @@ export default function Textarea(props) {
   };
 
   return (
-    <>
+    <TextareaMainWrapper>
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
-
-      <TextareaWrapper>
+      <TextareaInnerWrapper>
         <TextareaTag {...props}></TextareaTag>
         {props.hasClipboardButton ? (
           <ClipboardButtonWrap>
             <Button onClick={onClipboardButtonClick} transparent small>
-              Copy to clibpoard
+              {props.compactClipboardButton ? "Copy" : "Copy to clibpoard"}
             </Button>
           </ClipboardButtonWrap>
         ) : (
@@ -107,7 +113,7 @@ export default function Textarea(props) {
             </ResetLink>
           </ResetButtonWrap>
         )}
-      </TextareaWrapper>
-    </>
+      </TextareaInnerWrapper>
+    </TextareaMainWrapper>
   );
 }

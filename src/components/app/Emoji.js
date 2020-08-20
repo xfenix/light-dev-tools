@@ -1,15 +1,32 @@
 import "emoji-mart/css/emoji-mart.css";
 
 import React, { useState } from "react";
+import styled, { createGlobalStyle } from "styled-components";
 
 import { Picker } from "emoji-mart";
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
-import styled from "styled-components";
 
 const FlexWrap = styled.div`
   display: flex;
   column-gap: 30px;
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+  }
+`;
+const OneFlexColumn = styled.div`
+  flex-grow: 1;
+`;
+const OverrideStylesForTextarea = createGlobalStyle`
+.emoji-special-textarea {
+  font-size: 40px;
+  height: 405px;
+
+  @media (max-width: 768px) {
+    height: 70px !important;
+  }
+}
 `;
 
 export default function EmojiComponent() {
@@ -25,6 +42,7 @@ export default function EmojiComponent() {
 
   return (
     <>
+      <OverrideStylesForTextarea />
       <TextBlock>
         <p>
           Click on any emoji, it will appear in textarea. Then you can copy it
@@ -32,19 +50,18 @@ export default function EmojiComponent() {
         </p>
       </TextBlock>
       <FlexWrap>
-        <div>
+        <OneFlexColumn>
           <Picker native={true} onSelect={addEmoji} title="Pick emoji" />
-        </div>
-        <div>
+        </OneFlexColumn>
+        <OneFlexColumn>
           <Textarea
             label="Result"
             value={currentEmojiFieldValue}
             onChange={onChangeCurrentEmoji}
             hasClipboardButton
-            medium
-            style={{ fontSize: "40px", height: "405px" }}
+            className="emoji-special-textarea"
           ></Textarea>
-        </div>
+        </OneFlexColumn>
       </FlexWrap>
     </>
   );

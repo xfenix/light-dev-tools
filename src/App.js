@@ -3,6 +3,7 @@ import * as settings from "./Settings";
 import { NavLink, Route, HashRouter as Router, Switch } from "react-router-dom";
 
 import Base64Component from "./components/app/Base64";
+import ColorComponent from "./components/app/Color";
 import EmojiComponent from "./components/app/Emoji";
 import HashComponent from "./components/app/Hash";
 import React from "react";
@@ -76,13 +77,14 @@ h2 {
 }
 
 .mainlayout__wrap {
-  width: 700px;
+  width: 100%;
+  max-width: 740px;
   margin: 0 auto;
   padding: 25px 20px;
+  box-sizing: border-box;
 }
 
 .mainlayout__menu {
-  box-sizing: border-box;
   background: #BDEBFB;
 }
 
@@ -150,38 +152,43 @@ function App() {
               </div>
             </header>
             <div className="mainlayout__menu">
-              <div className="mainlayout__wrap">
-                <nav className="topmenu">
-                  <NavLink
-                    to="/tool/base64/"
-                    className="topmenu__item"
-                    activeClassName="topmenu__item_active"
-                  >
-                    Base 64
-                  </NavLink>
-                  <NavLink
-                    to="/tool/hash/"
-                    className="topmenu__item"
-                    activeClassName="topmenu__item_active"
-                  >
-                    Hash
-                  </NavLink>
-                  <NavLink
-                    to="/tool/urlencode/"
-                    className="topmenu__item"
-                    activeClassName="topmenu__item_active"
-                  >
-                    Url encode&decode
-                  </NavLink>
-                  <NavLink
-                    to="/tool/emoji/"
-                    className="topmenu__item"
-                    activeClassName="topmenu__item_active"
-                  >
-                    Emoji picker
-                  </NavLink>
-                </nav>
-              </div>
+              <nav className="topmenu mainlayout__wrap">
+                <NavLink
+                  to="/tool/base64/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Base 64
+                </NavLink>
+                <NavLink
+                  to="/tool/hash/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Hash
+                </NavLink>
+                <NavLink
+                  to="/tool/urlencode/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Url encode&decode
+                </NavLink>
+                <NavLink
+                  to="/tool/emoji/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Emoji picker
+                </NavLink>
+                <NavLink
+                  to="/tool/color/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Color picker
+                </NavLink>
+              </nav>
             </div>
             <div className="mainlayout__wrap mainlayout__content">
               <Switch>
@@ -196,6 +203,9 @@ function App() {
                 </Route>
                 <Route path="/tool/emoji/">
                   <EmojiComponent />
+                </Route>
+                <Route path="/tool/color/">
+                  <ColorComponent />
                 </Route>
                 <Route path="/">
                   <div className="typo">

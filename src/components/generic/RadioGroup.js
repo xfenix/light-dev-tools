@@ -5,6 +5,8 @@ const AllRadios = styled.div`
   margin-bottom: 25px;
   display: flex;
   column-gap: 20px;
+  row-gap: 10px;
+  flex-wrap: wrap;
 `;
 
 const OneRadioLabel = styled.label`
