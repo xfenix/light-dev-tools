@@ -1,7 +1,8 @@
 # Light dev tools
 
 ![Node.js CI](https://github.com/xfenix/light-dev-tools/workflows/Node.js%20CI/badge.svg)
-Bunch of small useful tools in one projects.<br>
+
+Bunch of small useful tools in one projects.
 
 Current tools support:
 
