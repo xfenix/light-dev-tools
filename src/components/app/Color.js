@@ -18,13 +18,16 @@ const InputsBox = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 30px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 
   @media (max-width: 450px) {
     display: flex;
     flex-flow: column;
-    row-gap: 30px;
     margin-bottom: 0;
+
+    & > div {
+      margin-bottom: 20px;
+    }
   }
 `;
 const PickersBox = styled.div`
@@ -36,6 +39,7 @@ const PickersBox = styled.div`
 
   @media (max-width: 450px) {
     flex-flow: column;
+    padding-bottom: 10px;
 
     & > div {
       margin-bottom: 30px;
