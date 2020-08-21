@@ -11,7 +11,6 @@ import EmojiComponent from "./components/app/Emoji";
 import HashComponent from "./components/app/Hash";
 import React from "react";
 import { Reset } from "styled-reset";
-import { ToastProvider } from "react-toast-notifications";
 import UrlencodeComponent from "./components/app/Urlencode";
 import { createGlobalStyle } from "styled-components";
 
@@ -138,7 +137,6 @@ h2 {
 function App() {
   return (
     <>
-      <ToastProvider>
         <Router>
           <Reset />
           <ApplicationGlobalStyles />
@@ -241,7 +239,6 @@ function App() {
             </footer>
           </main>
         </Router>
-      </ToastProvider>
     </>
   );
 }
