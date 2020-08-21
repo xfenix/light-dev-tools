@@ -1,3 +1,5 @@
+import "react-toastify/dist/ReactToastify.css";
+
 import * as settings from "./Settings";
 
 import { NavLink, Route, HashRouter as Router, Switch } from "react-router-dom";

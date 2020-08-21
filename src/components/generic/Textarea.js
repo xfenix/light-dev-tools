@@ -1,10 +1,11 @@
 import * as settings from "../../Settings";
 
+import { ToastContainer, toast } from "react-toastify";
+
 import Button from "./Button";
 import React from "react";
 import copy from "copy-to-clipboard";
 import styled from "styled-components";
-import { useToasts } from "react-toast-notifications";
 
 const TextareaMainWrapper = styled.div`
   box-sizing: border-box;
@@ -60,17 +61,11 @@ const ResetLink = styled.a`
 `;
 
 export default function Textarea(props) {
-  const { addToast } = useToasts();
-
   const onClipboardButtonClick = () => {
     const currentFinalValue = props.value ? props.value : props.defaultValue;
     if (currentFinalValue) {
       copy(currentFinalValue);
-      addToast("Copied!", {
-        appearance: "success",
-        autoDismiss: true,
-        autoDismissTimeout: 1000,
-      });
+      toast("Copied!");
     }
   };
 
@@ -90,6 +85,7 @@ export default function Textarea(props) {
 
   return (
     <TextareaMainWrapper>
+      <ToastContainer autoClose={1000} closeOnClick />
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
       <TextareaInnerWrapper>
         <TextareaTag {...props}></TextareaTag>
