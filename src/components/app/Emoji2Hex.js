@@ -13,6 +13,7 @@ const FlexWrap = styled.div`
   grid-gap: 30px;
 
   @media (max-width: 650px) {
+    grid-gap: 0;
     display: flex;
     flex-direction: column-reverse;
   }
@@ -20,7 +21,7 @@ const FlexWrap = styled.div`
 const OneFlexColumn = styled.div`
   @media (max-width: 650px) {
     &:first-child {
-      margin-top: 30px;
+      margin-top: 20px;
     }
   }
 `;
