@@ -15,11 +15,13 @@ const AllControlsWrap = styled.div`
   }
 `;
 const InputsBox = styled.div`
-  display: flex;
-  column-gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 30px;
   margin-bottom: 30px;
 
   @media (max-width: 450px) {
+    display: flex;
     flex-flow: column;
     row-gap: 30px;
     margin-bottom: 0;
@@ -27,12 +29,17 @@ const InputsBox = styled.div`
 `;
 const PickersBox = styled.div`
   display: flex;
-  column-gap: 30px;
+
+  & > div {
+    margin-right: 30px;
+  }
 
   @media (max-width: 450px) {
     flex-flow: column;
-    row-gap: 30px;
-    margin-bottom: 30px;
+
+    & > div {
+      margin-bottom: 30px;
+    }
   }
 `;
 

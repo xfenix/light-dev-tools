@@ -4,6 +4,7 @@ import { NavLink, Route, HashRouter as Router, Switch } from "react-router-dom";
 
 import Base64Component from "./components/app/Base64";
 import ColorComponent from "./components/app/Color";
+import Emoji2HexComponent from "./components/app/Emoji2Hex";
 import EmojiComponent from "./components/app/Emoji";
 import HashComponent from "./components/app/Hash";
 import React from "react";
@@ -139,17 +140,15 @@ function App() {
           <Reset />
           <ApplicationGlobalStyles />
           <main className="mainlayout">
-            <header className="mainlayout__topline">
-              <div className="mainlayout__wrap">
-                <NavLink to="/" className="sitetitle" activeClassName="">
-                  <h1 className="sitetitle__title">
-                    <span role="img" aria-label="Software engineer">
-                      🧑‍💻
-                    </span>
-                    &nbsp;Light dev tools
-                  </h1>
-                </NavLink>
-              </div>
+            <header className="mainlayout__topline mainlayout__wrap">
+              <NavLink to="/" className="sitetitle" activeClassName="">
+                <h1 className="sitetitle__title">
+                  <span role="img" aria-label="Software engineer">
+                    &#x1F9D1;&#x200D;&#x1F4BB;
+                  </span>
+                  &nbsp;Light dev tools
+                </h1>
+              </NavLink>
             </header>
             <div className="mainlayout__menu">
               <nav className="topmenu mainlayout__wrap">
@@ -182,6 +181,13 @@ function App() {
                   Emoji picker
                 </NavLink>
                 <NavLink
+                  to="/tool/emoji2hex/"
+                  className="topmenu__item"
+                  activeClassName="topmenu__item_active"
+                >
+                  Emoji2hex
+                </NavLink>
+                <NavLink
                   to="/tool/color/"
                   className="topmenu__item"
                   activeClassName="topmenu__item_active"
@@ -203,6 +209,9 @@ function App() {
                 </Route>
                 <Route path="/tool/emoji/">
                   <EmojiComponent />
+                </Route>
+                <Route path="/tool/emoji2hex/">
+                  <Emoji2HexComponent />
                 </Route>
                 <Route path="/tool/color/">
                   <ColorComponent />

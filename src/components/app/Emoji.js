@@ -8,16 +8,21 @@ import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
 
 const FlexWrap = styled.div`
-  display: flex;
-  column-gap: 30px;
-  row-gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 30px;
 
   @media (max-width: 768px) {
+    display: flex;
     flex-direction: column-reverse;
   }
 `;
 const OneFlexColumn = styled.div`
-  flex-grow: 1;
+  @media (max-width: 768px) {
+    &:first-child {
+      margin-top: 30px;
+    }
+  }
 `;
 const OverrideStylesForTextarea = createGlobalStyle`
 .emoji-special-textarea {
