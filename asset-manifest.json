@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.js": "/light-dev-tools/static/js/main.963cfe67.chunk.js",
-    "main.js.map": "/light-dev-tools/static/js/main.963cfe67.chunk.js.map",
+    "main.js": "/light-dev-tools/static/js/main.a1b041f8.chunk.js",
+    "main.js.map": "/light-dev-tools/static/js/main.a1b041f8.chunk.js.map",
     "runtime-main.js": "/light-dev-tools/static/js/runtime-main.28d9f15f.js",
     "runtime-main.js.map": "/light-dev-tools/static/js/runtime-main.28d9f15f.js.map",
     "static/css/2.c2bc211b.chunk.css": "/light-dev-tools/static/css/2.c2bc211b.chunk.css",
     "static/js/2.bb90f73b.chunk.js": "/light-dev-tools/static/js/2.bb90f73b.chunk.js",
     "static/js/2.bb90f73b.chunk.js.map": "/light-dev-tools/static/js/2.bb90f73b.chunk.js.map",
     "index.html": "/light-dev-tools/index.html",
-    "precache-manifest.163985d51f4437f57ffa6d4906ec1e90.js": "/light-dev-tools/precache-manifest.163985d51f4437f57ffa6d4906ec1e90.js",
+    "precache-manifest.34b1d14b39e0f31f2aa6240157ab2a49.js": "/light-dev-tools/precache-manifest.34b1d14b39e0f31f2aa6240157ab2a49.js",
     "service-worker.js": "/light-dev-tools/service-worker.js",
     "static/css/2.c2bc211b.chunk.css.map": "/light-dev-tools/static/css/2.c2bc211b.chunk.css.map",
     "static/js/2.bb90f73b.chunk.js.LICENSE.txt": "/light-dev-tools/static/js/2.bb90f73b.chunk.js.LICENSE.txt"
@@ -17,6 +17,6 @@
     "static/js/runtime-main.28d9f15f.js",
     "static/css/2.c2bc211b.chunk.css",
     "static/js/2.bb90f73b.chunk.js",
-    "static/js/main.963cfe67.chunk.js"
+    "static/js/main.a1b041f8.chunk.js"
   ]
 }
