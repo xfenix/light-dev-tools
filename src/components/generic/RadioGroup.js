@@ -2,16 +2,17 @@ import React from "react";
 import styled from "styled-components";
 
 const AllRadios = styled.div`
-  margin-bottom: 25px;
+  margin-bottom: -20px;
+  padding-bottom: 30px;
   display: flex;
-  column-gap: 20px;
-  row-gap: 10px;
   flex-wrap: wrap;
 `;
 
 const OneRadioLabel = styled.label`
   display: flex;
   align-items: flex-start;
+  margin-right: 20px;
+  margin-bottom: 20px;
 `;
 
 const InputRadio = styled.input`

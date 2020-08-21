@@ -109,16 +109,17 @@ h2 {
 }
 
 .topmenu {
-  display: flex;
-  column-gap: 30px;
-  row-gap: 20px;
-  flex-wrap: wrap;
+  margin-left: -30px;
+  margin-bottom: -20px;
+  overflow: hidden;
 }
 
 .topmenu__item {
   font-size: 120%;
-  display: block;
+  display: inline-block;
   padding-bottom: 3px;
+  margin-left: 30px;
+  margin-bottom: 20px;
 }
 
 .topmenu__item_active,
@@ -151,49 +152,51 @@ function App() {
               </NavLink>
             </header>
             <div className="mainlayout__menu">
-              <nav className="topmenu mainlayout__wrap">
-                <NavLink
-                  to="/tool/base64/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Base 64
-                </NavLink>
-                <NavLink
-                  to="/tool/hash/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Hash
-                </NavLink>
-                <NavLink
-                  to="/tool/urlencode/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Url encode&decode
-                </NavLink>
-                <NavLink
-                  to="/tool/emoji/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Emoji picker
-                </NavLink>
-                <NavLink
-                  to="/tool/emoji2hex/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Emoji2hex
-                </NavLink>
-                <NavLink
-                  to="/tool/color/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Color picker
-                </NavLink>
+              <nav className="mainlayout__wrap">
+                <div className="topmenu">
+                  <NavLink
+                    to="/tool/base64/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Base 64
+                  </NavLink>
+                  <NavLink
+                    to="/tool/hash/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Hash
+                  </NavLink>
+                  <NavLink
+                    to="/tool/urlencode/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Url encode&decode
+                  </NavLink>
+                  <NavLink
+                    to="/tool/emoji/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Emoji picker
+                  </NavLink>
+                  <NavLink
+                    to="/tool/emoji2hex/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Emoji2hex
+                  </NavLink>
+                  <NavLink
+                    to="/tool/color/"
+                    className="topmenu__item"
+                    activeClassName="topmenu__item_active"
+                  >
+                    Color picker
+                  </NavLink>
+                </div>
               </nav>
             </div>
             <div className="mainlayout__wrap mainlayout__content">
