@@ -62,12 +62,13 @@ const ResetLink = styled.a`
 `;
 
 export default function Textarea(props) {
-  const onClipboardButtonClick = () => {
+  const onClipboardButtonClick = (event) => {
     const currentFinalValue = props.value ? props.value : props.defaultValue;
     if (currentFinalValue) {
       copy(currentFinalValue);
       toast("Copied!");
     }
+    event.preventDefault();
   };
 
   const onResetForm = (event) => {
@@ -91,7 +92,9 @@ export default function Textarea(props) {
       <TextareaInnerWrapper>
         <TextareaTag {...props}></TextareaTag>
         {props.hasClipboardButton ? (
-          <ClipboardButtonWrap style={{ opacity: props.value ? 1 : 0 }}>
+          <ClipboardButtonWrap
+            style={{ opacity: props.value || props.defaultValue ? 1 : 0 }}
+          >
             <Button onClick={onClipboardButtonClick} transparent small>
               {props.compactClipboardButton ? "Copy" : "Copy to clibpoard"}
             </Button>
