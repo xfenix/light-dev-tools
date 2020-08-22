@@ -51,9 +51,11 @@ const ResetButtonWrap = styled.div`
   margin-top: 5px;
 `;
 const ResetLink = styled.a`
-  border-bottom: 1px dashed ${settings.LIGHT_BLUE_COLOR};
+  color: ${settings.BLACK_COLOR};
+  border-bottom: 1px dashed ${settings.BLACK_COLOR};
   display: inline-block;
   font-size: 90%;
+  text-decoration: none;
 
   &:hover {
     color: ${settings.RED_COLOR};
