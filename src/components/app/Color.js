@@ -26,7 +26,7 @@ const InputsBox = styled.div`
     margin-bottom: 0;
 
     & > div {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
   }
 `;
