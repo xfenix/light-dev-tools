@@ -2,7 +2,7 @@ import "emoji-mart/css/emoji-mart.css";
 
 import React, { useState } from "react";
 
-import { Picker } from "emoji-mart";
+import { Picker } from "emoji-mart/dist-modern/index";
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
 import styled from "styled-components";
