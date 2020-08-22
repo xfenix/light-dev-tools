@@ -8,6 +8,8 @@ import Base64Component from "./components/app/Base64";
 import ColorComponent from "./components/app/Color";
 import Emoji2HexComponent from "./components/app/Emoji2Hex";
 import EmojiComponent from "./components/app/Emoji";
+import ForkMeOnGithub from "fork-me-on-github";
+import GitHubButton from "react-github-btn";
 import HashComponent from "./components/app/Hash";
 import React from "react";
 import { Reset } from "styled-reset";
@@ -42,6 +44,10 @@ h1 {
 h2 {
   font-size: 22px;
   margin-bottom: 20px;
+}
+
+.fork-me-on-github {
+  border-bottom: none;
 }
 
 .typo p + p {
@@ -95,6 +101,12 @@ h2 {
   color: ${settings.LIGHT_GREY_COLOR};
   border-top: 1px solid ${settings.LIGHT_GREY_COLOR};
   font-size: 90%;
+}
+
+.mainlayout__footgithub {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
 }
 
 .sitetitle {
@@ -152,6 +164,11 @@ function App() {
                   &nbsp;Light dev tools
                 </h1>
               </NavLink>
+              <ForkMeOnGithub
+                repo="https://github.com/xfenix/light-dev-tools"
+                colorBackground="black"
+                colorOctocat="white"
+              />
             </header>
             <div className="mainlayout__menu">
               <nav className="mainlayout__wrap">
@@ -234,10 +251,16 @@ function App() {
               </Switch>
             </div>
             <footer className="mainlayout__wrap mainlayout__footer typo">
-              {new Date().getFullYear()} &copy; fancy copyright and footer text.
-              <br />
-              By big and strong corporation. Special thanks for mom. Also for
-              cat.
+              <div className="mainlayout__footgithub">
+                <GitHubButton href="https://github.com/xfenix">
+                  Developed by @xfenix
+                </GitHubButton>
+              </div>
+              <p>
+                {new Date().getFullYear()} &copy; By big and strong corporation.
+                Special thanks for mom. Also for cat. And many other useless
+                text parts.
+              </p>
             </footer>
           </main>
         </Router>
