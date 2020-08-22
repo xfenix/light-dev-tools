@@ -14,7 +14,38 @@ import React from "react";
 import { Reset } from "styled-reset";
 import UrlencodeComponent from "./components/app/Urlencode";
 
-// Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
+const MAIN_MENU = [
+  {
+    slug: "base64",
+    component: Base64Component,
+    title: "Base 64",
+  },
+  {
+    slug: "hash",
+    component: HashComponent,
+    title: "Hash",
+  },
+  {
+    slug: "urlencode",
+    component: UrlencodeComponent,
+    title: "Url encode&decode",
+  },
+  {
+    slug: "emoji",
+    component: EmojiComponent,
+    title: "Emoji picker",
+  },
+  {
+    slug: "emoji2hex",
+    component: Emoji2HexComponent,
+    title: "Emoji2hex",
+  },
+  {
+    slug: "color",
+    component: ColorComponent,
+    title: "Color picker",
+  },
+];
 
 function App() {
   return (
@@ -24,8 +55,8 @@ function App() {
         <ApplicationGlobalStyles />
         <main className="mainlayout">
           <header className="mainlayout__topline mainlayout__wrap">
-            <NavLink to="/" className="sitetitle" activeClassName="">
-              <h1 className="sitetitle__title">
+            <NavLink to="/" className="sitelogo" activeClassName="">
+              <h1 className="sitelogo__title">
                 <span role="img" aria-label="Software engineer">
                   &#x1F9D1;&#x200D;&#x1F4BB;
                 </span>
@@ -41,71 +72,29 @@ function App() {
           <div className="mainlayout__menu">
             <nav className="mainlayout__wrap">
               <div className="topmenu">
-                <NavLink
-                  to="/tool/base64/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Base 64
-                </NavLink>
-                <NavLink
-                  to="/tool/hash/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Hash
-                </NavLink>
-                <NavLink
-                  to="/tool/urlencode/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Url encode&decode
-                </NavLink>
-                <NavLink
-                  to="/tool/emoji/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Emoji picker
-                </NavLink>
-                <NavLink
-                  to="/tool/emoji2hex/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Emoji2hex
-                </NavLink>
-                <NavLink
-                  to="/tool/color/"
-                  className="topmenu__item"
-                  activeClassName="topmenu__item_active"
-                >
-                  Color picker
-                </NavLink>
+                {MAIN_MENU.map((oneItemDict) => {
+                  return (
+                    <NavLink
+                      to={"/tool/" + oneItemDict.slug}
+                      className="topmenu__item link"
+                      activeClassName="topmenu__item_active link_active"
+                    >
+                      {oneItemDict.title}
+                    </NavLink>
+                  );
+                })}
               </div>
             </nav>
           </div>
           <div className="mainlayout__wrap mainlayout__content">
             <Switch>
-              <Route path="/tool/base64/">
-                <Base64Component />
-              </Route>
-              <Route path="/tool/hash/">
-                <HashComponent />
-              </Route>
-              <Route path="/tool/urlencode/">
-                <UrlencodeComponent />
-              </Route>
-              <Route path="/tool/emoji/">
-                <EmojiComponent />
-              </Route>
-              <Route path="/tool/emoji2hex/">
-                <Emoji2HexComponent />
-              </Route>
-              <Route path="/tool/color/">
-                <ColorComponent />
-              </Route>
+              {MAIN_MENU.map((oneItemDict) => {
+                return (
+                  <Route path={"/tool/" + oneItemDict.slug}>
+                    <oneItemDict.component />
+                  </Route>
+                );
+              })}
               <Route path="/">
                 <div className="typo">
                   <h2>Hello</h2>

@@ -7,6 +7,7 @@ import { createGlobalStyle } from "styled-components";
 // Our palette https://coolors.co/b80c09-0b4f6c-01baef-fbfbff-040f16
 
 export const ApplicationGlobalStyles = createGlobalStyle`
+/* Global tags */
 body {
   font-family: 'Varta', sans-serif;
   background: ${settings.WHITE_COLOR};
@@ -14,13 +15,9 @@ body {
 }
 
 a {
-  color: ${settings.LIGHT_BLUE_COLOR};
-  text-decoration: none;
-  border-bottom: 1px solid ${settings.LIGHT_BLUE_COLOR};
-}
-
-a:hover {
-  border-bottom-color: #056fe8;
+  color: ${settings.BLACK_COLOR};
+  border-bottom: none;
+  text-decoration: underline;
 }
 
 h1 {
@@ -31,6 +28,30 @@ h1 {
 h2 {
   font-size: 22px;
   margin-bottom: 20px;
+}
+
+/* Global classes */
+.link {
+  text-decoration: none;
+  color: ${settings.BLACK_COLOR};
+  transition: color 0.2s;
+
+  &::after {
+    display: block;
+    content: '';
+    background: ${settings.BLACK_COLOR};
+    width: 100%;
+    height: 1px;
+  }
+}
+
+.link:hover,
+.link_active {
+  color: ${settings.LIGHT_BLUE_COLOR} !important;
+
+  &::after {
+    background: linear-gradient(to right, rgba(196,225,127,1) 0%, rgba(196,225,127,1) 12%, rgba(247,253,202,1) 12%, rgba(247,253,202,1) 25%, rgba(250,208,113,1) 25%, rgba(250,208,113,1) 39%, rgba(240,118,107,1) 39%, rgba(240,118,107,1) 52%, rgba(219,157,190,1) 52%, rgba(219,157,190,1) 65%, rgba(196,156,223,1) 65%, rgba(196,156,223,1) 78%, rgba(101,153,226,1) 78%, rgba(101,153,226,1) 89%, rgba(97,194,228,1) 89%, rgba(97,194,228,1) 100%);
+  }
 }
 
 .fork-me-on-github {
@@ -72,6 +93,7 @@ h2 {
   font-size: 80%;
 }
 
+/* Global layout things */
 .mainlayout__wrap {
   width: 100%;
   max-width: 740px;
@@ -96,17 +118,23 @@ h2 {
   align-items: center;
 }
 
-.sitetitle {
+.sitelogo {
   display: inline-block;
   border-bottom: none;
+  text-decoration: none;
+
+  &::after {
+    display: none;
+  }
 }
 
-.sitetitle:hover {
-  opacity: 0.7;
-}
-
-.sitetitle__title {
+.sitelogo__title {
   font-size: 44px;
+  transition: color .4s;
+
+  &:hover {
+    color: ${settings.LIGHT_BLUE_COLOR} !important;
+  }
 }
 
 .topmenu {
@@ -129,6 +157,7 @@ h2 {
   border-bottom-color: ${settings.BLACK_COLOR};
 }
 
+/* Some overrides */
 .emoji-mart-emoji {
   outline: none;
 }
