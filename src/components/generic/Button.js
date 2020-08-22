@@ -1,4 +1,4 @@
-import * as settings from "../../Settings";
+import * as settings from "../../misc/Settings";
 
 import React from "react";
 import styled from "styled-components";

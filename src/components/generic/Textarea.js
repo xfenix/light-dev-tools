@@ -1,4 +1,4 @@
-import * as settings from "../../Settings";
+import * as settings from "../../misc/Settings";
 
 import { ToastContainer, toast } from "react-toastify";
 
@@ -43,6 +43,7 @@ const ClipboardButtonWrap = styled.div`
   position: absolute;
   top: 2px;
   right: 2px;
+  transition: opacity 0.5s;
 `;
 const ResetButtonWrap = styled.div`
   width: 100%;
@@ -90,7 +91,7 @@ export default function Textarea(props) {
       <TextareaInnerWrapper>
         <TextareaTag {...props}></TextareaTag>
         {props.hasClipboardButton ? (
-          <ClipboardButtonWrap>
+          <ClipboardButtonWrap style={{ opacity: props.value ? 1 : 0 }}>
             <Button onClick={onClipboardButtonClick} transparent small>
               {props.compactClipboardButton ? "Copy" : "Copy to clibpoard"}
             </Button>
