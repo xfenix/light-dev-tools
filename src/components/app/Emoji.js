@@ -21,7 +21,7 @@ const FlexWrap = styled.div`
 const OneFlexColumn = styled.div`
   @media (max-width: 768px) {
     &:first-child {
-      margin-top: 10px;
+      margin-top: 20px;
     }
   }
 `;
