@@ -51,12 +51,14 @@ export default function Base64Component() {
         onChange={setNewInputValue}
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
+        wrapperClassName="inputgroup"
         hasClipboardButton
         medium
       ></Textarea>
       <Textarea
         label="Base64"
         onChange={setNewOutputValue}
+        wrapperClassName="inputgroup"
         value={outputValue}
         hasClipboardButton
         medium

@@ -42,6 +42,7 @@ export default function UrlencodeComponent() {
         label="Url to encode"
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
+        wrapperClassName="inputgroup"
         onChange={setNewInputValue}
         hasClipboardButton
         small
@@ -50,6 +51,7 @@ export default function UrlencodeComponent() {
         label="Url to decode"
         value={outputValue}
         onChange={setNewOutputValue}
+        wrapperClassName="inputgroup"
         hasClipboardButton
         small
       ></Textarea>

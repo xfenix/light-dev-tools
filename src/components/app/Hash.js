@@ -39,11 +39,13 @@ export default function HashComponent() {
         label="Input"
         onChange={onHashInput}
         value={inputValue}
+        wrapperClassName="inputgroup"
         small
       ></Textarea>
       <Textarea
         label="Hash digest"
         defaultValue={outputValue}
+        wrapperClassName="inputgroup"
         hasClipboardButton
         smallest
         readOnly

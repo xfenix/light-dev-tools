@@ -88,7 +88,7 @@ export default function Textarea(props) {
   };
 
   return (
-    <TextareaMainWrapper>
+    <TextareaMainWrapper className={props.wrapperClassName}>
       <ToastContainer autoClose={1000} closeOnClick />
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
       <TextareaInnerWrapper>

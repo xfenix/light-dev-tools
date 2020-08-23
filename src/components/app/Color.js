@@ -18,15 +18,15 @@ const InputsBox = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 30px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 
   @media (max-width: 450px) {
     display: flex;
     flex-flow: column;
     margin-bottom: 0;
 
-    & > div {
-      margin-bottom: 10px;
+    & > div + div {
+      margin-top: 15px;
     }
   }
 `;

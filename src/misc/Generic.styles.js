@@ -93,6 +93,10 @@ h2 {
   font-size: 80%;
 }
 
+.inputgroup + .inputgroup {
+  margin-top: 10px;
+}
+
 /* Global layout things */
 .mainlayout__wrap {
   width: 100%;
@@ -111,6 +115,7 @@ h2 {
   border-top: 1px solid ${settings.LIGHT_GREY_COLOR};
   font-size: 90%;
   margin-top: 20px;
+  padding-top: 20px;
 }
 
 .mainlayout__footgithub {
