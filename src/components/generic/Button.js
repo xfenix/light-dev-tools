@@ -14,6 +14,7 @@ const InnerButton = styled.button`
   text-transform: uppercase;
   border: none;
   outline: none;
+  transition: opacity 0.2s;
   ${(props) => (props.small ? "font-size: 70%;" : "")}
   ${(props) => (props.transparent ? "opacity: 0.6;" : "")}
 

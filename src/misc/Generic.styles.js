@@ -50,7 +50,7 @@ h2 {
   color: ${settings.LIGHT_BLUE_COLOR} !important;
 
   &::after {
-    background: linear-gradient(to right, rgba(196,225,127,1) 0%, rgba(196,225,127,1) 12%, rgba(247,253,202,1) 12%, rgba(247,253,202,1) 25%, rgba(250,208,113,1) 25%, rgba(250,208,113,1) 39%, rgba(240,118,107,1) 39%, rgba(240,118,107,1) 52%, rgba(219,157,190,1) 52%, rgba(219,157,190,1) 65%, rgba(196,156,223,1) 65%, rgba(196,156,223,1) 78%, rgba(101,153,226,1) 78%, rgba(101,153,226,1) 89%, rgba(97,194,228,1) 89%, rgba(97,194,228,1) 100%);
+    background: linear-gradient(to right, rgba(197,225,127,1) 0%, rgba(196,225,127,1) 12%, rgba(247,253,202,1) 12%, rgba(247,253,202,1) 25%, rgba(240,208,113,1) 25%, rgba(252,208,113,1) 39%, rgba(240,117,107,1) 39%, rgba(240,118,107,1) 52%, rgba(219,157,190,1) 52%, rgba(219,157,190,1) 65%, rgba(196,136,223,1) 65%, rgba(196,156,223,1) 78%, rgba(101,153,226,1) 78%, rgba(101,153,226,1) 89%, rgba(97,194,228,1) 89%, rgba(97,194,228,1) 100%);
   }
 }
 
@@ -110,6 +110,7 @@ h2 {
   color: ${settings.LIGHT_GREY_COLOR};
   border-top: 1px solid ${settings.LIGHT_GREY_COLOR};
   font-size: 90%;
+  margin-top: 20px;
 }
 
 .mainlayout__footgithub {
