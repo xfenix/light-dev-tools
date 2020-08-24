@@ -8,7 +8,7 @@ export default function CalculatorComponent() {
   const [calculatedResultValue, setCalculatedResultValue] = useState("");
 
   const safeEval = (expressionStr) => {
-    return new Function("return " + expressionStr)();
+    return new Function("return " + expressionStr)(); // eslint-disable-line no-new-func
   };
 
   const onChangeCalc = (event) => {
