@@ -2,7 +2,6 @@ import React, { useState } from "react";
 
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
-import styled from "styled-components";
 
 export default function CalculatorComponent() {
   const [currentValue, setCurrentCalcValue] = useState("");
