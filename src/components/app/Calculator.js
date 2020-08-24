@@ -7,10 +7,14 @@ export default function CalculatorComponent() {
   const [currentValue, setCurrentCalcValue] = useState("");
   const [calculatedResultValue, setCalculatedResultValue] = useState("");
 
+  const safeEval = (expressionStr) => {
+    return new Function("return " + expressionStr)();
+  };
+
   const onChangeCalc = (event) => {
     setCurrentCalcValue(event.target.value);
     try {
-      setCalculatedResultValue(eval(event.target.value));
+      setCalculatedResultValue(safeEval(event.target.value));
     } catch {}
   };
 
