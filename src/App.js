@@ -4,12 +4,14 @@ import { NavLink, Route, HashRouter as Router, Switch } from "react-router-dom";
 
 import { ApplicationGlobalStyles } from "./misc/Generic.styles";
 import Base64Component from "./components/app/Base64";
+import CalculatorComponent from "./components/app/Calculator";
 import ColorComponent from "./components/app/Color";
 import Emoji2HexComponent from "./components/app/Emoji2Hex";
 import EmojiComponent from "./components/app/Emoji";
 import ForkMeOnGithub from "fork-me-on-github";
 import GitHubButton from "react-github-btn";
 import HashComponent from "./components/app/Hash";
+// import ImageComponent from "./components/app/Image";
 import React from "react";
 import { Reset } from "styled-reset";
 import UrlencodeComponent from "./components/app/Urlencode";
@@ -45,6 +47,16 @@ const MAIN_MENU = [
     component: ColorComponent,
     title: "Color picker",
   },
+  // {
+  //   slug: "image",
+  //   component: ImageComponent,
+  //   title: "Image tools",
+  // },
+  {
+    slug: "calculator",
+    component: CalculatorComponent,
+    title: "Calculator",
+  },
 ];
 
 function App() {
@@ -75,6 +87,7 @@ function App() {
                 {MAIN_MENU.map((oneItemDict) => {
                   return (
                     <NavLink
+                      key={oneItemDict.slug}
                       to={"/tool/" + oneItemDict.slug}
                       className="topmenu__item link"
                       activeClassName="topmenu__item_active link_active"
@@ -90,7 +103,10 @@ function App() {
             <Switch>
               {MAIN_MENU.map((oneItemDict) => {
                 return (
-                  <Route path={"/tool/" + oneItemDict.slug}>
+                  <Route
+                    path={"/tool/" + oneItemDict.slug}
+                    key={oneItemDict.slug}
+                  >
                     <oneItemDict.component />
                   </Route>
                 );
