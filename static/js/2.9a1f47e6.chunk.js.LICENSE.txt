@@ -16,6 +16,8 @@ object-assign
  * @license BSD-2-Clause
  */
 
+/*! typograf | © 2020 Denis Seleznev | MIT  License | https://github.com/typograf/typograf */
+
 /** @license React v0.19.1
  * scheduler.production.min.js
  *
