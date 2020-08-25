@@ -30,6 +30,10 @@ h2 {
   margin-bottom: 20px;
 }
 
+strong, b {
+  font-weight: bold;
+}
+
 /* Global classes */
 .link {
   text-decoration: none;
@@ -89,6 +93,10 @@ h2 {
   border-color: ${settings.RED_COLOR};
 }
 
+.dangerous {
+  color: ${settings.RED_COLOR};
+}
+
 .fontsmall {
   font-size: 80%;
 }
@@ -138,6 +146,10 @@ h2 {
   font-size: 44px;
   transition: color .4s;
 
+  @media (max-width: 450px) {
+    font-size: 30px;
+  }
+
   &:hover {
     color: ${settings.LIGHT_BLUE_COLOR} !important;
   }
@@ -147,6 +159,11 @@ h2 {
   margin-left: -30px;
   margin-bottom: -20px;
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    font-size: 100%;
+    margin-left: -15px;
+  }
 }
 
 .topmenu__item {
@@ -155,6 +172,11 @@ h2 {
   padding-bottom: 3px;
   margin-left: 30px;
   margin-bottom: 20px;
+
+  @media (max-width: 600px) {
+    font-size: 100%;
+    margin-left: 15px;
+  }
 }
 
 .topmenu__item_active,

@@ -20,12 +20,23 @@ export default function CalculatorComponent() {
 
   return (
     <>
-      <TextBlock>Simple calculator.</TextBlock>
+      <TextBlock>
+        <p>
+          Simple calculator. Write any expression in input field and got
+          calculated result in result.
+        </p>
+        <p>
+          <strong className="dangerous">WARNING!</strong> This feature can be
+          dangerous. Dont paste any code from the internet in in &laquo;input
+          expression&raquo; field.
+        </p>
+      </TextBlock>
       <Textarea
         label="Input expression"
         value={currentValue}
         onChange={onChangeCalc}
         className="emoji-special-textarea"
+        style={{ fontSize: "120%" }}
       />
       <Textarea
         label="Result"
@@ -33,6 +44,7 @@ export default function CalculatorComponent() {
         className="emoji-special-textarea"
         hasClipboardButton
         readOnly
+        style={{ fontSize: "200%", height: "65px" }}
       ></Textarea>
     </>
   );
