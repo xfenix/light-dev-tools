@@ -21,8 +21,11 @@ const TextareaTag = styled.textarea`
   box-sizing: border-box;
   width: 100%;
   height: 100%;
+  font-size: 16px;
   min-height: ${(props) =>
-    props.medium
+    props.big
+      ? "400px"
+      : props.medium
       ? "200px"
       : props.small
       ? "100px"

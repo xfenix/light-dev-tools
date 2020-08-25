@@ -24,7 +24,8 @@
     "react-scripts": "^3.4.3",
     "react-toastify": "^6.0.8",
     "styled-components": "^5.1.1",
-    "styled-reset": "^4.2.2"
+    "styled-reset": "^4.2.2",
+    "typograf": "^6.11.1"
   },
   "scripts": {
     "start": "react-scripts start",

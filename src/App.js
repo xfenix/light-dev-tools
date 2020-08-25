@@ -14,6 +14,7 @@ import HashComponent from "./components/app/Hash";
 // import ImageComponent from "./components/app/Image";
 import React from "react";
 import { Reset } from "styled-reset";
+import TypografComponent from "./components/app/Typograf";
 import UrlencodeComponent from "./components/app/Urlencode";
 
 const MAIN_MENU = [
@@ -56,6 +57,11 @@ const MAIN_MENU = [
     slug: "calculator",
     component: CalculatorComponent,
     title: "Calculator",
+  },
+  {
+    slug: "typograf",
+    component: TypografComponent,
+    title: "Typograf",
   },
 ];
 

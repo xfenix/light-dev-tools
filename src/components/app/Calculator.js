@@ -37,6 +37,7 @@ export default function CalculatorComponent() {
         onChange={onChangeCalc}
         className="emoji-special-textarea"
         style={{ fontSize: "120%" }}
+        smallest
       />
       <Textarea
         label="Result"
