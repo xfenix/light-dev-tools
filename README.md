@@ -5,7 +5,6 @@
 Bunch of small useful tools in one projects.
 
 Current tools support:
-
 - Base64 decoder/encoder
 - Url decoder/encoder
 - Emoji picker
