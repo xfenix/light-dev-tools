@@ -12,6 +12,7 @@ import ForkMeOnGithub from "fork-me-on-github";
 import GitHubButton from "react-github-btn";
 import HashComponent from "./components/app/Hash";
 // import ImageComponent from "./components/app/Image";
+import QrCodeComponent from "./components/app/QrCode";
 import React from "react";
 import { Reset } from "styled-reset";
 import TypografComponent from "./components/app/Typograf";
@@ -62,6 +63,11 @@ const MAIN_MENU = [
     slug: "typograf",
     component: TypografComponent,
     title: "Typograf",
+  },
+  {
+    slug: "qr",
+    component: QrCodeComponent,
+    title: "QR code",
   },
 ];
 

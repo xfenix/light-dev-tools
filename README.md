@@ -9,6 +9,7 @@ Current tools support:
 - Url decoder/encoder
 - Emoji picker
 - Color picker
+- QR code generator
 - More tools currently under development...
 
 Project hostend on github pages: https://xfenix.github.io/light-dev-tools/.
