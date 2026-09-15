@@ -18,6 +18,12 @@ object-assign
 
 /*! typograf | © 2020 Denis Seleznev | MIT  License | https://github.com/typograf/typograf */
 
+/**
+ * @license qrcode.react
+ * Copyright (c) Paul O'Shannessy
+ * SPDX-License-Identifier: ISC
+ */
+
 /** @license React v0.19.1
  * scheduler.production.min.js
  *
