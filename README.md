@@ -10,6 +10,7 @@ Current tools support:
 - Emoji picker
 - Color picker
 - QR code generator
+- Image converter with resize and crop
 - More tools currently under development...
 
 Project hostend on github pages: https://xfenix.github.io/light-dev-tools/.

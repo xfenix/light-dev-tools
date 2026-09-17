@@ -11,6 +11,7 @@
     "emoji-mart": "^3.0.0",
     "fork-me-on-github": "^1.0.6",
     "gh-pages": "^5.0.0",
+    "heic2any": "^0.0.4",
     "js-base64": "^3.4.5",
     "jshashes": "^1.0.8",
     "qrcode.react": "^4.2.0",
@@ -26,7 +27,8 @@
     "react-toastify": "^6.0.8",
     "styled-components": "^5.1.1",
     "styled-reset": "^4.2.2",
-    "typograf": "^6.11.1"
+    "typograf": "^6.11.1",
+    "utif": "^3.1.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -11,7 +11,7 @@ import EmojiComponent from "./components/app/Emoji";
 import ForkMeOnGithub from "fork-me-on-github";
 import GitHubButton from "react-github-btn";
 import HashComponent from "./components/app/Hash";
-// import ImageComponent from "./components/app/Image";
+import ImageComponent from "./components/app/Image";
 import QrCodeComponent from "./components/app/QrCode";
 import React from "react";
 import { Reset } from "styled-reset";
@@ -49,11 +49,11 @@ const MAIN_MENU = [
     component: ColorComponent,
     title: "Color picker",
   },
-  // {
-  //   slug: "image",
-  //   component: ImageComponent,
-  //   title: "Image tools",
-  // },
+  {
+    slug: "image",
+    component: ImageComponent,
+    title: "Image convert&resize",
+  },
   {
     slug: "calculator",
     component: CalculatorComponent,
