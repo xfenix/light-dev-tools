@@ -7,6 +7,11 @@ export const RESIZE_MODES = [
   { key: "stretch", title: "Exact size" },
 ];
 const LANCZOS_LOBES = 3;
+// Canvas itself gives up somewhere around 16k on a side and every megapixel
+// costs four megabytes of memory, so the sizes are bounded before anything is
+// allocated. A file or a typed number can ask for way more than that
+export const MAX_IMAGE_SIDE = 16384;
+export const MAX_IMAGE_PIXELS = 80000000;
 // A bigger table means a smaller rounding error on the way back to 8 bit
 const LINEAR_TABLE_SIZE = 8192;
 const BYTE_SIZES = ["B", "KB", "MB", "GB"];
@@ -279,7 +284,13 @@ export function computeResizePlan(options) {
     return { width: sourceWidth, height: sourceHeight, cropRect: fullRect };
   }
   if (options.mode === "stretch" && boxWidth > 0 && boxHeight > 0) {
-    return { width: boxWidth, height: boxHeight, cropRect: fullRect };
+    return {
+      width: options.allowUpscale ? boxWidth : Math.min(boxWidth, sourceWidth),
+      height: options.allowUpscale
+        ? boxHeight
+        : Math.min(boxHeight, sourceHeight),
+      cropRect: fullRect,
+    };
   }
   const widthRatio = boxWidth > 0 ? boxWidth / sourceWidth : null;
   const heightRatio = boxHeight > 0 ? boxHeight / sourceHeight : null;
@@ -325,6 +336,32 @@ export function computeResizePlan(options) {
 
 function limitScale(scaleValue, allowUpscale) {
   return allowUpscale ? scaleValue : Math.min(1, scaleValue);
+}
+
+// Returns an empty string for the sizes the browser can really handle and a
+// human readable complaint for the rest
+export function describeSizeProblem(imageWidth, imageHeight) {
+  if (
+    !isFinite(imageWidth) ||
+    !isFinite(imageHeight) ||
+    imageWidth < 1 ||
+    imageHeight < 1
+  ) {
+    return "The size has to be at least one pixel on both sides";
+  }
+  if (imageWidth > MAX_IMAGE_SIDE || imageHeight > MAX_IMAGE_SIDE) {
+    return `A side cannot be bigger than ${MAX_IMAGE_SIDE} pixels, ${Math.round(
+      imageWidth
+    )}x${Math.round(imageHeight)} is too much`;
+  }
+  if (imageWidth * imageHeight > MAX_IMAGE_PIXELS) {
+    return `${Math.round(imageWidth)}x${Math.round(
+      imageHeight
+    )} is over the ${Math.round(
+      MAX_IMAGE_PIXELS / 1000000
+    )} megapixel limit of this tool`;
+  }
+  return "";
 }
 
 export function formatByteSize(bytesCount) {

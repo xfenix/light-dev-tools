@@ -6,8 +6,10 @@ import {
   buildOutputFileName,
 } from "../../misc/ImageCodecs";
 import {
+  MAX_IMAGE_SIDE,
   computeResizePlan,
   cropPixels,
+  describeSizeProblem,
   flattenPixels,
   formatByteSize,
   halvePixels,
@@ -16,7 +18,11 @@ import {
   reducePixelsByHalves,
   resamplePixels,
 } from "../../misc/ImageProcessing";
-import { encodeGif, lzwEncodeIndexes } from "../../misc/GifEncoder";
+import {
+  buildPalette,
+  encodeGif,
+  lzwEncodeIndexes,
+} from "../../misc/GifEncoder";
 
 import ImageComponent from "./Image";
 import React from "react";
@@ -160,6 +166,34 @@ test("resize plan respects the mode and never upscales silently", () => {
     allowUpscale: true,
   });
   expect(upscaledPlan.width).toBe(400);
+
+  // the exact size mode has to respect the upscale switch as well
+  const exactPlan = computeResizePlan({
+    sourceWidth: 100,
+    sourceHeight: 80,
+    boxWidth: 400,
+    boxHeight: 40,
+    mode: "stretch",
+  });
+  expect(exactPlan.width).toBe(100);
+  expect(exactPlan.height).toBe(40);
+  const exactUpscaledPlan = computeResizePlan({
+    sourceWidth: 100,
+    sourceHeight: 80,
+    boxWidth: 400,
+    boxHeight: 40,
+    mode: "stretch",
+    allowUpscale: true,
+  });
+  expect(exactUpscaledPlan.width).toBe(400);
+});
+
+test("sizes nobody can allocate are refused", () => {
+  expect(describeSizeProblem(4000, 3000)).toBe("");
+  expect(describeSizeProblem(MAX_IMAGE_SIDE, 1)).toBe("");
+  expect(describeSizeProblem(MAX_IMAGE_SIDE + 1, 1)).toMatch(/side cannot be/);
+  expect(describeSizeProblem(0, 100)).toMatch(/at least one pixel/);
+  expect(describeSizeProblem(16000, 16000)).toMatch(/megapixel limit/);
 });
 
 test("crop rectangle is clamped to the image", () => {
@@ -364,6 +398,37 @@ test("gif file carries the palette and the pixels of the image", () => {
   );
   expect(decodedColors[0]).toEqual([255, 0, 0]);
   expect(decodedColors[1]).toEqual([0, 0, 255]);
+});
+
+test("gif refuses the sizes the format cannot describe", () => {
+  const onePixel = new Uint8ClampedArray([1, 2, 3, 255]);
+  expect(() => encodeGif(onePixel, 65536, 1)).toThrow(/gif side/);
+  expect(() => encodeGif(onePixel, 0, 1)).toThrow(/gif side/);
+  expect(encodeGif(onePixel, 1, 1).length).toBeGreaterThan(0);
+});
+
+test("the palette survives a picture with a lot of colors", () => {
+  const somePixels = new Uint8ClampedArray(64 * 64 * 4);
+  for (let pixelIndex = 0; pixelIndex < 64 * 64; pixelIndex += 1) {
+    somePixels.set(
+      [pixelIndex % 256, (pixelIndex * 7) % 256, (pixelIndex * 13) % 256, 255],
+      pixelIndex * 4
+    );
+  }
+  const paletteColors = buildPalette(somePixels, 256);
+  expect(paletteColors.length).toBeLessThanOrEqual(256);
+  expect(paletteColors.length).toBeGreaterThan(16);
+
+  // a handful of flat colors still comes back untouched
+  const flatPixels = new Uint8ClampedArray([
+    255, 0, 0, 255, 0, 0, 255, 255, 255, 0, 0, 255,
+  ]);
+  expect(buildPalette(flatPixels, 256).sort()).toEqual(
+    [
+      [255, 0, 0],
+      [0, 0, 255],
+    ].sort()
+  );
 });
 
 test("output file keeps the name and gets the new extension", () => {

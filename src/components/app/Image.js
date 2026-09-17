@@ -242,6 +242,8 @@ export default function ImageComponent() {
   const cropBoxElement = useRef(null);
   const dragState = useRef(null);
   const resultUrl = useRef("");
+  const dropCounter = useRef(0);
+  const liveSource = useRef(null);
 
   const supportedFormats = useMemo(() => detectSupportedOutputFormats(), []);
   const currentFormat = findOutputFormat(formatKey);
@@ -257,21 +259,28 @@ export default function ImageComponent() {
     return normalizeCropRect(cropRect, sourceImage.width, sourceImage.height);
   }, [cropRect, sourceImage]);
 
+  // Decoding is asynchronous and a second file can be dropped while the first
+  // one is still being read, so only the last drop is allowed to win
   const onDrop = useCallback(async (acceptedFiles) => {
     const oneFile = acceptedFiles[0];
     if (!oneFile) {
       return;
     }
+    dropCounter.current += 1;
+    const dropNumber = dropCounter.current;
     setBusy(true);
     setErrorText("");
     try {
       const decodedImage = await decodeImageFile(oneFile);
-      setSourceImage((previousImage) => {
-        if (previousImage) {
-          previousImage.release();
-        }
-        return decodedImage;
-      });
+      if (dropNumber !== dropCounter.current) {
+        decodedImage.release();
+        return;
+      }
+      if (liveSource.current) {
+        liveSource.current.release();
+      }
+      liveSource.current = decodedImage;
+      setSourceImage(decodedImage);
       setCropRect({
         left: 0,
         top: 0,
@@ -285,13 +294,22 @@ export default function ImageComponent() {
         height: String(decodedImage.height),
       });
     } catch (someError) {
+      if (dropNumber !== dropCounter.current) {
+        return;
+      }
+      if (liveSource.current) {
+        liveSource.current.release();
+        liveSource.current = null;
+      }
       setSourceImage(null);
       setResultData(null);
       setErrorText(
         `${someError.message}. Try another file or convert it to png first.`
       );
     }
-    setBusy(false);
+    if (dropNumber === dropCounter.current) {
+      setBusy(false);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -412,6 +430,14 @@ export default function ImageComponent() {
           url: resultUrl.current,
           width: renderedImage.width,
           height: renderedImage.height,
+          // the name and the format travel with the blob, otherwise a download
+          // during the next render would save the old picture under a new
+          // extension
+          fileName: buildOutputFileName(
+            sourceImage.fileName,
+            findOutputFormat(formatKey)
+          ),
+          formatTitle: findOutputFormat(formatKey).title,
         });
         setErrorText("");
       } catch (someError) {
@@ -443,19 +469,31 @@ export default function ImageComponent() {
       if (resultUrl.current) {
         URL.revokeObjectURL(resultUrl.current);
       }
+      if (liveSource.current) {
+        liveSource.current.release();
+        liveSource.current = null;
+      }
     };
   }, []);
 
+  // The box around the preview has a border, so the pixels are measured from
+  // the canvas itself and scaled by its real rendered size
   const pointFromEvent = (someEvent) => {
-    const boxRect = cropBoxElement.current.getBoundingClientRect();
+    const canvasRect = previewCanvas.current.getBoundingClientRect();
+    const widthScale = canvasRect.width
+      ? canvasRect.width / sourceImage.width
+      : 1;
+    const heightScale = canvasRect.height
+      ? canvasRect.height / sourceImage.height
+      : 1;
     return {
       left: clampNumber(
-        Math.round((someEvent.clientX - boxRect.left) / previewScale),
+        Math.round((someEvent.clientX - canvasRect.left) / widthScale),
         0,
         sourceImage.width
       ),
       top: clampNumber(
-        Math.round((someEvent.clientY - boxRect.top) / previewScale),
+        Math.round((someEvent.clientY - canvasRect.top) / heightScale),
         0,
         sourceImage.height
       ),
@@ -607,10 +645,7 @@ export default function ImageComponent() {
     if (!resultData) {
       return;
     }
-    saveBlob(
-      resultData.blob,
-      buildOutputFileName(sourceImage.fileName, currentFormat)
-    );
+    saveBlob(resultData.blob, resultData.fileName);
     toast("Saved!");
   };
 
@@ -869,13 +904,13 @@ export default function ImageComponent() {
                     {sourceImage.height}, {formatByteSize(sourceImage.fileSize)}
                   </li>
                   <li>
-                    Result: {currentFormat.title}, {resultData.width}x
+                    Result: {resultData.formatTitle}, {resultData.width}x
                     {resultData.height}, {formatByteSize(resultData.blob.size)}
                   </li>
                 </InfoList>
                 <ButtonsBox>
                   <Button onClick={onDownloadClick}>
-                    Download {currentFormat.title}
+                    Download {resultData.formatTitle}
                   </Button>
                 </ButtonsBox>
               </>

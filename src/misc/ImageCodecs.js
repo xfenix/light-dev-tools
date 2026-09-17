@@ -4,6 +4,7 @@
 
 import {
   cropPixels,
+  describeSizeProblem,
   flattenPixels,
   hasTransparentPixels,
   reducePixelsByHalves,
@@ -145,6 +146,13 @@ export function detectSupportedOutputFormats() {
       return false;
     }
   });
+}
+
+function guardSize(imageWidth, imageHeight) {
+  const sizeProblem = describeSizeProblem(imageWidth, imageHeight);
+  if (sizeProblem) {
+    throw new Error(sizeProblem);
+  }
 }
 
 function createCanvas(canvasWidth, canvasHeight) {
@@ -300,6 +308,7 @@ function drawableToPixels(drawableImage, targetWidth, targetHeight) {
     drawableImage.naturalHeight ||
     drawableImage.height ||
     SVG_FALLBACK_SIZE;
+  guardSize(imageWidth, imageHeight);
   const canvasElement = createCanvas(imageWidth, imageHeight);
   const drawContext = canvasElement.getContext("2d");
   drawContext.imageSmoothingEnabled = true;
@@ -325,6 +334,7 @@ async function decodeTiffFile(fileBuffer) {
   }
   const firstPage = allPages[0];
   tiffLibrary.decodeImage(fileBuffer, firstPage, allPages);
+  guardSize(firstPage.width, firstPage.height);
   const rgbaPixels = tiffLibrary.toRGBA8(firstPage);
   return {
     pixels: new Uint8ClampedArray(rgbaPixels),
@@ -395,10 +405,13 @@ export async function decodeImageFile(someFile) {
       const svgImage = await loadImageElement(svgUrl, false);
       return drawableToPixels(svgImage, targetWidth, targetHeight);
     };
-    const naturalPixels = await rasterize(
-      naturalSize.width,
-      naturalSize.height
-    );
+    let naturalPixels = null;
+    try {
+      naturalPixels = await rasterize(naturalSize.width, naturalSize.height);
+    } catch (someError) {
+      URL.revokeObjectURL(svgUrl);
+      throw someError;
+    }
     return Object.assign({}, commonPart, naturalPixels, {
       isVector: true,
       rasterize,
@@ -426,6 +439,7 @@ export async function renderPixels(sourceImage, renderPlan) {
   const cropRect = renderPlan.cropRect;
   const targetWidth = Math.max(1, Math.round(renderPlan.width));
   const targetHeight = Math.max(1, Math.round(renderPlan.height));
+  guardSize(targetWidth, targetHeight);
   const isGammaAware = renderPlan.gammaCorrect !== false;
   let currentStep = null;
 

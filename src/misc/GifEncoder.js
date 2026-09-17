@@ -5,6 +5,13 @@
 const MAX_PALETTE_SIZE = 256;
 const TRANSPARENCY_THRESHOLD = 128;
 const MAX_LZW_CODE = 4096;
+// Both sides live in two bytes of the header
+const MAX_GIF_SIDE = 65535;
+// A photo can easily hold millions of distinct colors and one histogram entry
+// per color eats memory for nothing, so the colors are counted in buckets of
+// five bits per channel and every bucket keeps the average of what fell in it
+const HISTOGRAM_BITS = 5;
+const HISTOGRAM_SHIFT = 8 - HISTOGRAM_BITS;
 
 function makeColorBox(colorEntries) {
   let minRed = 255;
@@ -85,7 +92,11 @@ function averageBoxColor(oneBox) {
 
 // Opaque colors of the image collapsed into at most colorsLimit entries
 export function buildPalette(sourcePixels, colorsLimit) {
-  const countsByColor = new Map();
+  const bucketsCount = 1 << (HISTOGRAM_BITS * 3);
+  const redSums = new Float64Array(bucketsCount);
+  const greenSums = new Float64Array(bucketsCount);
+  const blueSums = new Float64Array(bucketsCount);
+  const bucketCounts = new Uint32Array(bucketsCount);
   for (
     let pixelOffset = 0;
     pixelOffset < sourcePixels.length;
@@ -94,21 +105,34 @@ export function buildPalette(sourcePixels, colorsLimit) {
     if (sourcePixels[pixelOffset + 3] < TRANSPARENCY_THRESHOLD) {
       continue;
     }
-    const colorKey =
-      sourcePixels[pixelOffset] * 65536 +
-      sourcePixels[pixelOffset + 1] * 256 +
-      sourcePixels[pixelOffset + 2];
-    countsByColor.set(colorKey, (countsByColor.get(colorKey) || 0) + 1);
+    const redValue = sourcePixels[pixelOffset];
+    const greenValue = sourcePixels[pixelOffset + 1];
+    const blueValue = sourcePixels[pixelOffset + 2];
+    const bucketIndex =
+      // eslint-disable-next-line no-bitwise
+      ((redValue >> HISTOGRAM_SHIFT) << (HISTOGRAM_BITS * 2)) +
+      // eslint-disable-next-line no-bitwise
+      ((greenValue >> HISTOGRAM_SHIFT) << HISTOGRAM_BITS) +
+      // eslint-disable-next-line no-bitwise
+      (blueValue >> HISTOGRAM_SHIFT);
+    redSums[bucketIndex] += redValue;
+    greenSums[bucketIndex] += greenValue;
+    blueSums[bucketIndex] += blueValue;
+    bucketCounts[bucketIndex] += 1;
   }
   const colorEntries = [];
-  countsByColor.forEach((oneCount, colorKey) => {
+  for (let bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex += 1) {
+    const oneCount = bucketCounts[bucketIndex];
+    if (oneCount === 0) {
+      continue;
+    }
     colorEntries.push({
-      red: Math.floor(colorKey / 65536),
-      green: Math.floor(colorKey / 256) % 256,
-      blue: colorKey % 256,
+      red: Math.round(redSums[bucketIndex] / oneCount),
+      green: Math.round(greenSums[bucketIndex] / oneCount),
+      blue: Math.round(blueSums[bucketIndex] / oneCount),
       count: oneCount,
     });
-  });
+  }
   if (colorEntries.length === 0) {
     return [[0, 0, 0]];
   }
@@ -367,6 +391,16 @@ function pushShort(targetBytes, shortValue) {
 }
 
 export function encodeGif(sourcePixels, imageWidth, imageHeight, options = {}) {
+  if (
+    imageWidth < 1 ||
+    imageHeight < 1 ||
+    imageWidth > MAX_GIF_SIDE ||
+    imageHeight > MAX_GIF_SIDE
+  ) {
+    throw new Error(
+      `A gif side has to be between 1 and ${MAX_GIF_SIDE} pixels, got ${imageWidth}x${imageHeight}`
+    );
+  }
   const wantsTransparency = options.transparent !== false;
   const hasTransparency =
     wantsTransparency && hasFullyTransparentPixel(sourcePixels);
