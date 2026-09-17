@@ -1,22 +1,26 @@
 {
   "files": {
-    "main.js": "/light-dev-tools/static/js/main.242df2db.chunk.js",
-    "main.js.map": "/light-dev-tools/static/js/main.242df2db.chunk.js.map",
-    "runtime-main.js": "/light-dev-tools/static/js/runtime-main.28d9f15f.js",
-    "runtime-main.js.map": "/light-dev-tools/static/js/runtime-main.28d9f15f.js.map",
-    "static/css/2.9f052f15.chunk.css": "/light-dev-tools/static/css/2.9f052f15.chunk.css",
-    "static/js/2.c991147e.chunk.js": "/light-dev-tools/static/js/2.c991147e.chunk.js",
-    "static/js/2.c991147e.chunk.js.map": "/light-dev-tools/static/js/2.c991147e.chunk.js.map",
+    "static/js/0.df7ad793.chunk.js": "/light-dev-tools/static/js/0.df7ad793.chunk.js",
+    "static/js/0.df7ad793.chunk.js.map": "/light-dev-tools/static/js/0.df7ad793.chunk.js.map",
+    "main.js": "/light-dev-tools/static/js/main.b29f36d3.chunk.js",
+    "main.js.map": "/light-dev-tools/static/js/main.b29f36d3.chunk.js.map",
+    "runtime-main.js": "/light-dev-tools/static/js/runtime-main.62726bc1.js",
+    "runtime-main.js.map": "/light-dev-tools/static/js/runtime-main.62726bc1.js.map",
+    "static/css/3.9f052f15.chunk.css": "/light-dev-tools/static/css/3.9f052f15.chunk.css",
+    "static/js/3.12279ddb.chunk.js": "/light-dev-tools/static/js/3.12279ddb.chunk.js",
+    "static/js/3.12279ddb.chunk.js.map": "/light-dev-tools/static/js/3.12279ddb.chunk.js.map",
+    "static/js/4.98c119e4.chunk.js": "/light-dev-tools/static/js/4.98c119e4.chunk.js",
+    "static/js/4.98c119e4.chunk.js.map": "/light-dev-tools/static/js/4.98c119e4.chunk.js.map",
     "index.html": "/light-dev-tools/index.html",
-    "precache-manifest.692d910de4104aa57c1ea244d18185be.js": "/light-dev-tools/precache-manifest.692d910de4104aa57c1ea244d18185be.js",
+    "precache-manifest.5b60cc1cf9af3f493a413e867b305eb1.js": "/light-dev-tools/precache-manifest.5b60cc1cf9af3f493a413e867b305eb1.js",
     "service-worker.js": "/light-dev-tools/service-worker.js",
-    "static/css/2.9f052f15.chunk.css.map": "/light-dev-tools/static/css/2.9f052f15.chunk.css.map",
-    "static/js/2.c991147e.chunk.js.LICENSE.txt": "/light-dev-tools/static/js/2.c991147e.chunk.js.LICENSE.txt"
+    "static/css/3.9f052f15.chunk.css.map": "/light-dev-tools/static/css/3.9f052f15.chunk.css.map",
+    "static/js/3.12279ddb.chunk.js.LICENSE.txt": "/light-dev-tools/static/js/3.12279ddb.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.28d9f15f.js",
-    "static/css/2.9f052f15.chunk.css",
-    "static/js/2.c991147e.chunk.js",
-    "static/js/main.242df2db.chunk.js"
+    "static/js/runtime-main.62726bc1.js",
+    "static/css/3.9f052f15.chunk.css",
+    "static/js/3.12279ddb.chunk.js",
+    "static/js/main.b29f36d3.chunk.js"
   ]
 }
