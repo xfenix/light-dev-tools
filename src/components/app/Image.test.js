@@ -24,7 +24,7 @@ import {
   lzwEncodeIndexes,
 } from "../../misc/GifEncoder";
 
-import ImageComponent from "./Image";
+import ImageComponent, { findCropHandle, resizeCropRect } from "./Image";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
@@ -445,4 +445,36 @@ test("the tool renders the drop zone and waits for a file", () => {
   render(<ImageComponent />);
   expect(screen.getByText(/Drag an image here/)).toBeInTheDocument();
   expect(screen.getByText("No image loaded yet.")).toBeInTheDocument();
+});
+
+test("crop handles are found near the edges and the corners win", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  expect(findCropHandle({ left: 102, top: 103 }, someRect, 10)).toBe("nw");
+  expect(findCropHandle({ left: 300, top: 298 }, someRect, 10)).toBe("se");
+  expect(findCropHandle({ left: 200, top: 100 }, someRect, 10)).toBe("n");
+  expect(findCropHandle({ left: 300, top: 200 }, someRect, 10)).toBe("e");
+  expect(findCropHandle({ left: 200, top: 200 }, someRect, 10)).toBe("");
+  expect(findCropHandle({ left: 20, top: 20 }, someRect, 10)).toBe("");
+});
+
+test("resizing moves the dragged side only and never turns the rect inside out", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  expect(resizeCropRect(someRect, "se", { left: 260, top: 240 })).toEqual({
+    left: 100,
+    top: 100,
+    width: 160,
+    height: 140,
+  });
+  expect(resizeCropRect(someRect, "nw", { left: 140, top: 130 })).toEqual({
+    left: 140,
+    top: 130,
+    width: 160,
+    height: 170,
+  });
+  expect(resizeCropRect(someRect, "w", { left: 500, top: 500 })).toEqual({
+    left: 299,
+    top: 100,
+    width: 1,
+    height: 200,
+  });
 });
