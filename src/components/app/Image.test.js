@@ -24,7 +24,11 @@ import {
   lzwEncodeIndexes,
 } from "../../misc/GifEncoder";
 
-import ImageComponent, { findCropHandle, resizeCropRect } from "./Image";
+import ImageComponent, {
+  applyAspectToHandle,
+  findCropHandle,
+  resizeCropRect,
+} from "./Image";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
@@ -477,4 +481,69 @@ test("resizing moves the dragged side only and never turns the rect inside out",
     width: 1,
     height: 200,
   });
+});
+
+test("the nearer edge takes the drag on a selection smaller than the grab distance", () => {
+  const tinyRect = { left: 100, top: 100, width: 8, height: 6 };
+  expect(findCropHandle({ left: 107, top: 105 }, tinyRect, 14)).toBe("se");
+  expect(findCropHandle({ left: 101, top: 101 }, tinyRect, 14)).toBe("nw");
+  // exactly in the middle the first edge keeps the drag, but it stays reachable
+  expect(findCropHandle({ left: 104, top: 103 }, tinyRect, 14)).toBe("nw");
+});
+
+test("a locked ratio moves the dragged side only", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  // the bottom is pulled down, the height decides and the top stays
+  const pulledDown = applyAspectToHandle(
+    resizeCropRect(someRect, "s", { left: 300, top: 400 }),
+    "s",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledDown).toEqual({ left: 100, top: 100, width: 300, height: 300 });
+
+  // the top is pulled up, the bottom edge has to stay where it was
+  const pulledUp = applyAspectToHandle(
+    resizeCropRect(someRect, "n", { left: 300, top: 40 }),
+    "n",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledUp.top + pulledUp.height).toBe(300);
+  expect(pulledUp).toEqual({ left: 100, top: 40, width: 260, height: 260 });
+
+  // the left is pulled aside, the right edge has to stay where it was
+  const pulledAside = applyAspectToHandle(
+    resizeCropRect(someRect, "w", { left: 50, top: 200 }),
+    "w",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledAside.left + pulledAside.width).toBe(300);
+  expect(pulledAside).toEqual({ left: 50, top: 100, width: 250, height: 250 });
+
+  // the north west corner keeps the south east one in place
+  const pulledCorner = applyAspectToHandle(
+    resizeCropRect(someRect, "nw", { left: 20, top: 60 }),
+    "nw",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledCorner.left + pulledCorner.width).toBe(300);
+  expect(pulledCorner.top + pulledCorner.height).toBe(300);
+
+  // and the selection never leaves the picture
+  const oversized = applyAspectToHandle(
+    { left: 900, top: 900, width: 400, height: 400 },
+    "se",
+    2,
+    1000,
+    1000
+  );
+  expect(oversized.left + oversized.width).toBeLessThanOrEqual(1000);
+  expect(oversized.top + oversized.height).toBeLessThanOrEqual(1000);
 });

@@ -313,15 +313,26 @@ export function applyAspectRatio(
   );
 }
 
+// A selection can be a couple of pixels wide, and then both of its edges are
+// under the pointer at once, so the closer one takes the drag
+function pickNearerEdge(pointValue, firstEdge, secondEdge, grabDistance) {
+  const firstDistance = Math.abs(pointValue - firstEdge);
+  const secondDistance = Math.abs(pointValue - secondEdge);
+  if (firstDistance > grabDistance && secondDistance > grabDistance) {
+    return 0;
+  }
+  if (secondDistance > grabDistance) {
+    return -1;
+  }
+  if (firstDistance > grabDistance) {
+    return 1;
+  }
+  return firstDistance <= secondDistance ? -1 : 1;
+}
+
 // A corner wins over an edge, otherwise the tiny overlap between the two makes
 // the corners almost impossible to catch
 export function findCropHandle(somePoint, cropRect, grabDistance) {
-  const nearLeft = Math.abs(somePoint.left - cropRect.left) <= grabDistance;
-  const nearRight =
-    Math.abs(somePoint.left - (cropRect.left + cropRect.width)) <= grabDistance;
-  const nearTop = Math.abs(somePoint.top - cropRect.top) <= grabDistance;
-  const nearBottom =
-    Math.abs(somePoint.top - (cropRect.top + cropRect.height)) <= grabDistance;
   const insideRows =
     somePoint.top >= cropRect.top - grabDistance &&
     somePoint.top <= cropRect.top + cropRect.height + grabDistance;
@@ -331,9 +342,80 @@ export function findCropHandle(somePoint, cropRect, grabDistance) {
   if (!insideRows || !insideColumns) {
     return "";
   }
-  const verticalPart = nearTop ? "n" : nearBottom ? "s" : "";
-  const horizontalPart = nearLeft ? "w" : nearRight ? "e" : "";
+  const verticalSide = pickNearerEdge(
+    somePoint.top,
+    cropRect.top,
+    cropRect.top + cropRect.height,
+    grabDistance
+  );
+  const horizontalSide = pickNearerEdge(
+    somePoint.left,
+    cropRect.left,
+    cropRect.left + cropRect.width,
+    grabDistance
+  );
+  const verticalPart =
+    verticalSide === -1 ? "n" : verticalSide === 1 ? "s" : "";
+  const horizontalPart =
+    horizontalSide === -1 ? "w" : horizontalSide === 1 ? "e" : "";
   return `${verticalPart}${horizontalPart}`;
+}
+
+// The ratio has to be kept without moving the edge the pointer is not holding:
+// dragging the bottom of a locked selection has to grow it downwards only, and
+// the side being dragged is the one that decides the new size
+export function applyAspectToHandle(
+  cropRect,
+  handleKey,
+  aspectRatio,
+  sourceWidth,
+  sourceHeight
+) {
+  if (!aspectRatio) {
+    return normalizeCropRect(cropRect, sourceWidth, sourceHeight);
+  }
+  const safeRect = normalizeCropRect(cropRect, sourceWidth, sourceHeight);
+  const keepsRightEdge = handleKey.indexOf("w") !== -1;
+  const keepsBottomEdge = handleKey.indexOf("n") !== -1;
+  const rightEdge = safeRect.left + safeRect.width;
+  const bottomEdge = safeRect.top + safeRect.height;
+  const isVertical = handleKey === "n" || handleKey === "s";
+  // room in the direction the selection is allowed to grow
+  const roomWidth = keepsRightEdge ? rightEdge : sourceWidth - safeRect.left;
+  const roomHeight = keepsBottomEdge ? bottomEdge : sourceHeight - safeRect.top;
+  const wantedWidth = isVertical
+    ? safeRect.height * aspectRatio
+    : safeRect.width;
+  const wantedHeight = isVertical
+    ? safeRect.height
+    : safeRect.width / aspectRatio;
+  const sizeScale = Math.min(
+    1,
+    roomWidth / wantedWidth,
+    roomHeight / wantedHeight
+  );
+  let nextWidth;
+  let nextHeight;
+  if (isVertical) {
+    nextHeight = Math.max(1, Math.round(wantedHeight * sizeScale));
+    nextWidth = Math.max(1, Math.round(nextHeight * aspectRatio));
+  } else {
+    nextWidth = Math.max(1, Math.round(wantedWidth * sizeScale));
+    nextHeight = Math.max(1, Math.round(nextWidth / aspectRatio));
+  }
+  // rounding can add a pixel back, and a pixel is enough to push the kept edge
+  nextWidth = Math.min(nextWidth, Math.max(1, Math.round(roomWidth)));
+  nextHeight = Math.min(nextHeight, Math.max(1, Math.round(roomHeight)));
+  return normalizeCropRect(
+    {
+      left: keepsRightEdge ? rightEdge - nextWidth : safeRect.left,
+      top: keepsBottomEdge ? bottomEdge - nextHeight : safeRect.top,
+      width: nextWidth,
+      height: nextHeight,
+    },
+    sourceWidth,
+    sourceHeight
+  );
 }
 
 // Dragging a handle moves its own side only, the opposite one stays where the
@@ -709,8 +791,9 @@ export default function ImageComponent() {
     }
     if (dragInfo.handleKey) {
       setCropRect(
-        applyAspectRatio(
+        applyAspectToHandle(
           resizeCropRect(dragInfo.startRect, dragInfo.handleKey, currentPoint),
+          dragInfo.handleKey,
           aspectRatio,
           sourceImage.width,
           sourceImage.height
