@@ -1,6 +1,22 @@
 import * as settings from "../../misc/Settings";
 
 import {
+  CheckLabel,
+  ControlRow,
+  DangerText,
+  FieldBox,
+  FieldLabel,
+  FieldsPair,
+  HintText,
+  NumberInput,
+  Panel,
+  PanelTitle,
+  SelectInput,
+  StickyColumn,
+  ToolColumn,
+  ToolGrid,
+} from "../../misc/Controls.styles";
+import {
   INPUT_FILE_ACCEPT,
   buildOutputFileName,
   decodeImageFile,
@@ -25,11 +41,11 @@ import {
   normalizeCropRect,
   parseHexColor,
 } from "../../misc/ImageProcessing";
+import { ToastContainer, toast } from "react-toastify";
 
 import Button from "../generic/Button";
 import TextBlock from "../generic/TextBlockBefore";
 import styled from "styled-components";
-import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
 
 const PREVIEW_MAX_SIDE = 460;
@@ -42,139 +58,214 @@ const ASPECT_PRESETS = [
   { key: "16:9", title: "16:9", ratio: 16 / 9 },
 ];
 const SCALE_PRESETS = [100, 75, 50, 33, 25];
+// How close to an edge of the selection the pointer has to be to grab it,
+// measured on the screen and converted to the pixels of the image later
+const HANDLE_GRAB_SIZE = 14;
+const CROP_HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+const HANDLE_CURSORS = {
+  nw: "nwse-resize",
+  se: "nwse-resize",
+  ne: "nesw-resize",
+  sw: "nesw-resize",
+  n: "ns-resize",
+  s: "ns-resize",
+  e: "ew-resize",
+  w: "ew-resize",
+};
+const HANDLE_OFFSETS = {
+  nw: { left: "0%", top: "0%" },
+  n: { left: "50%", top: "0%" },
+  ne: { left: "100%", top: "0%" },
+  e: { left: "100%", top: "50%" },
+  se: { left: "100%", top: "100%" },
+  s: { left: "50%", top: "100%" },
+  sw: { left: "0%", top: "100%" },
+  w: { left: "0%", top: "50%" },
+};
+// The alpha of the result has to be visible, a flat color would lie about the
+// transparent parts of the picture
+const CHECKER_BACKGROUND = `
+  linear-gradient(45deg, ${settings.LIGHT_GREY_COLOR} 25%, transparent 25%),
+  linear-gradient(-45deg, ${settings.LIGHT_GREY_COLOR} 25%, transparent 25%),
+  linear-gradient(45deg, transparent 75%, ${settings.LIGHT_GREY_COLOR} 75%),
+  linear-gradient(-45deg, transparent 75%, ${settings.LIGHT_GREY_COLOR} 75%)
+`;
 
 const DropBox = styled.div`
-  border: 2px dashed ${settings.BLACK_COLOR};
+  border: 2px dashed
+    ${(props) =>
+      props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   border-radius: ${settings.BORDER_RADIUS};
   padding: 30px;
   text-align: center;
   cursor: pointer;
-  margin-bottom: 30px;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
   background: ${(props) =>
     props.isActive ? settings.LIGHT_GREEN_COLOR : "transparent"};
+
+  &:hover {
+    border-color: ${settings.BLACK_COLOR};
+  }
 `;
-const SettingsBox = styled.div`
+// Once a picture is loaded the drop area is not the main thing on the page
+// anymore, so it shrinks down to a single line with the source facts on it
+const CompactDropBox = styled(DropBox)`
   display: flex;
   flex-wrap: wrap;
-  margin: 0 -15px;
+  align-items: baseline;
+  gap: 5px 10px;
+  text-align: left;
+  padding: 12px 15px;
 `;
-const OneColumn = styled.div`
-  flex: 1 1 320px;
-  padding: 0 15px;
-  margin-bottom: 30px;
-  min-width: 0;
-`;
-const ControlLabel = styled.div`
-  margin-bottom: 5px;
+const SourceName = styled.strong`
   font-weight: bold;
+  word-break: break-all;
 `;
-const ControlRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 15px;
-
-  & > * + * {
-    margin-left: 10px;
-  }
+const SourceMeta = styled.span`
+  color: ${settings.GREY_COLOR};
+  font-size: 90%;
 `;
-const NumberInput = styled.input`
-  width: 110px;
-  padding: 8px 10px;
-  border: 2px solid ${settings.LIGHT_GREY_COLOR};
-  border-radius: ${settings.BORDER_RADIUS};
-  box-sizing: border-box;
+const ReplaceHint = styled.span`
+  margin-left: auto;
+  color: ${settings.GREY_COLOR};
+  font-size: 85%;
+  white-space: nowrap;
 `;
-const SelectInput = styled.select`
-  padding: 8px 10px;
-  border: 2px solid ${settings.LIGHT_GREY_COLOR};
-  border-radius: ${settings.BORDER_RADIUS};
-  background: ${settings.WHITE_COLOR};
-`;
-const RangeInput = styled.input`
-  width: 200px;
+const CropBox = styled.div`
+  position: relative;
+  display: block;
+  width: fit-content;
   max-width: 100%;
-`;
-const CheckLabel = styled.label`
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
+  line-height: 0;
+  touch-action: none;
+  user-select: none;
+  border: 2px solid ${settings.BLACK_COLOR};
+  border-radius: ${settings.BORDER_RADIUS};
+  overflow: hidden;
 
-  & > input {
-    margin: 0 8px 0 0;
+  & > canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
   }
+`;
+// One single layer does the dimming, the huge spread shadow paints everything
+// around the selection and the box above clips it
+const CropWindow = styled.div`
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid ${settings.WHITE_COLOR};
+  box-shadow: 0 0 0 1px rgba(4, 15, 22, 0.6),
+    0 0 0 100vmax rgba(4, 15, 22, 0.45);
+  background: transparent;
+  pointer-events: none;
+`;
+const CropHandle = styled.div`
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  box-sizing: border-box;
+  background: ${settings.WHITE_COLOR};
+  border: 1px solid ${settings.BLACK_COLOR};
+  border-radius: 2px;
 `;
 const FormatsBox = styled.div`
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: 10px;
-
-  & > * {
-    margin: 0 10px 10px 0;
-  }
+  gap: 8px;
 `;
 const FormatButton = styled.button`
-  padding: 8px 14px;
+  padding: 7px 14px;
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid
     ${(props) =>
       props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   background: ${(props) =>
     props.isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
-  cursor: pointer;
-  text-transform: uppercase;
+  font-family: inherit;
   font-size: 80%;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: ${settings.BLACK_COLOR};
+  }
 `;
-const CropBox = styled.div`
-  position: relative;
+const RangeInput = styled.input`
+  flex: 1 1 140px;
+  min-width: 0;
+`;
+const RangeValue = styled.span`
+  flex: none;
+  width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+`;
+const ColorInput = styled.input`
+  flex: none;
+  width: 44px;
+  height: 38px;
+  padding: 2px;
+  border: 2px solid ${settings.LIGHT_GREY_COLOR};
+  border-radius: ${settings.BORDER_RADIUS};
+  background: ${settings.WHITE_COLOR};
+  cursor: pointer;
+`;
+const ResultFrame = styled.div`
   display: inline-block;
-  line-height: 0;
   max-width: 100%;
-  touch-action: none;
-  user-select: none;
+  line-height: 0;
   border: 2px solid ${settings.BLACK_COLOR};
   border-radius: ${settings.BORDER_RADIUS};
   overflow: hidden;
-  cursor: crosshair;
-`;
-const CropShade = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(4, 15, 22, 0.45);
-  pointer-events: none;
-`;
-const CropWindow = styled.div`
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px solid ${settings.WHITE_COLOR};
-  box-shadow: 0 0 0 1px ${settings.BLACK_COLOR};
-  background: transparent;
-  pointer-events: none;
-`;
-const ResultBox = styled.div`
-  margin-top: 20px;
+  background-image: ${CHECKER_BACKGROUND};
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  transition: opacity 0.2s;
+  opacity: ${(props) => (props.isBusy ? 0.5 : 1)};
 `;
 const ResultImage = styled.img`
+  display: block;
   max-width: 100%;
-  border: 2px solid ${settings.BLACK_COLOR};
-  border-radius: ${settings.BORDER_RADIUS};
+  height: auto;
 `;
-const ButtonsBox = styled.div`
-  margin-top: 20px;
+const ResultFacts = styled.dl`
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 15px;
+  margin-top: 15px;
+  font-size: 90%;
 
-  & > button + button {
-    margin-left: 10px;
+  & > dt {
+    color: ${settings.GREY_COLOR};
   }
 `;
-const MessageBox = styled.p`
-  margin-top: 20px;
+const DeltaText = styled.span`
+  color: ${(props) =>
+    props.isSmaller ? settings.BLACK_COLOR : settings.RED_COLOR};
 `;
-const InfoList = styled.ul`
-  margin-top: 10px;
+const EmptyBox = styled.div`
+  margin-top: 20px;
+  padding: 30px;
+  text-align: center;
+  color: ${settings.GREY_COLOR};
+  border: 2px dashed ${settings.LIGHT_GREY_COLOR};
+  border-radius: ${settings.BORDER_RADIUS};
+`;
+const ErrorBox = styled(DangerText)`
+  margin-top: 20px;
+  font-size: 100%;
+`;
+const ResultSection = styled.div`
+  margin-top: 30px;
+`;
+const BusyMark = styled.span`
+  color: ${settings.GREY_COLOR};
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
 `;
 
 function saveBlob(someBlob, fileName) {
@@ -222,6 +313,138 @@ export function applyAspectRatio(
   );
 }
 
+// A selection can be a couple of pixels wide, and then both of its edges are
+// under the pointer at once, so the closer one takes the drag
+function pickNearerEdge(pointValue, firstEdge, secondEdge, grabDistance) {
+  const firstDistance = Math.abs(pointValue - firstEdge);
+  const secondDistance = Math.abs(pointValue - secondEdge);
+  if (firstDistance > grabDistance && secondDistance > grabDistance) {
+    return 0;
+  }
+  if (secondDistance > grabDistance) {
+    return -1;
+  }
+  if (firstDistance > grabDistance) {
+    return 1;
+  }
+  return firstDistance <= secondDistance ? -1 : 1;
+}
+
+// A corner wins over an edge, otherwise the tiny overlap between the two makes
+// the corners almost impossible to catch
+export function findCropHandle(somePoint, cropRect, grabDistance) {
+  const insideRows =
+    somePoint.top >= cropRect.top - grabDistance &&
+    somePoint.top <= cropRect.top + cropRect.height + grabDistance;
+  const insideColumns =
+    somePoint.left >= cropRect.left - grabDistance &&
+    somePoint.left <= cropRect.left + cropRect.width + grabDistance;
+  if (!insideRows || !insideColumns) {
+    return "";
+  }
+  const verticalSide = pickNearerEdge(
+    somePoint.top,
+    cropRect.top,
+    cropRect.top + cropRect.height,
+    grabDistance
+  );
+  const horizontalSide = pickNearerEdge(
+    somePoint.left,
+    cropRect.left,
+    cropRect.left + cropRect.width,
+    grabDistance
+  );
+  const verticalPart =
+    verticalSide === -1 ? "n" : verticalSide === 1 ? "s" : "";
+  const horizontalPart =
+    horizontalSide === -1 ? "w" : horizontalSide === 1 ? "e" : "";
+  return `${verticalPart}${horizontalPart}`;
+}
+
+// The ratio has to be kept without moving the edge the pointer is not holding:
+// dragging the bottom of a locked selection has to grow it downwards only, and
+// the side being dragged is the one that decides the new size
+export function applyAspectToHandle(
+  cropRect,
+  handleKey,
+  aspectRatio,
+  sourceWidth,
+  sourceHeight
+) {
+  if (!aspectRatio) {
+    return normalizeCropRect(cropRect, sourceWidth, sourceHeight);
+  }
+  const safeRect = normalizeCropRect(cropRect, sourceWidth, sourceHeight);
+  const keepsRightEdge = handleKey.indexOf("w") !== -1;
+  const keepsBottomEdge = handleKey.indexOf("n") !== -1;
+  const rightEdge = safeRect.left + safeRect.width;
+  const bottomEdge = safeRect.top + safeRect.height;
+  const isVertical = handleKey === "n" || handleKey === "s";
+  // room in the direction the selection is allowed to grow
+  const roomWidth = keepsRightEdge ? rightEdge : sourceWidth - safeRect.left;
+  const roomHeight = keepsBottomEdge ? bottomEdge : sourceHeight - safeRect.top;
+  const wantedWidth = isVertical
+    ? safeRect.height * aspectRatio
+    : safeRect.width;
+  const wantedHeight = isVertical
+    ? safeRect.height
+    : safeRect.width / aspectRatio;
+  const sizeScale = Math.min(
+    1,
+    roomWidth / wantedWidth,
+    roomHeight / wantedHeight
+  );
+  let nextWidth;
+  let nextHeight;
+  if (isVertical) {
+    nextHeight = Math.max(1, Math.round(wantedHeight * sizeScale));
+    nextWidth = Math.max(1, Math.round(nextHeight * aspectRatio));
+  } else {
+    nextWidth = Math.max(1, Math.round(wantedWidth * sizeScale));
+    nextHeight = Math.max(1, Math.round(nextWidth / aspectRatio));
+  }
+  // rounding can add a pixel back, and a pixel is enough to push the kept edge
+  nextWidth = Math.min(nextWidth, Math.max(1, Math.round(roomWidth)));
+  nextHeight = Math.min(nextHeight, Math.max(1, Math.round(roomHeight)));
+  return normalizeCropRect(
+    {
+      left: keepsRightEdge ? rightEdge - nextWidth : safeRect.left,
+      top: keepsBottomEdge ? bottomEdge - nextHeight : safeRect.top,
+      width: nextWidth,
+      height: nextHeight,
+    },
+    sourceWidth,
+    sourceHeight
+  );
+}
+
+// Dragging a handle moves its own side only, the opposite one stays where the
+// user put it
+export function resizeCropRect(startRect, handleKey, somePoint) {
+  let leftEdge = startRect.left;
+  let topEdge = startRect.top;
+  let rightEdge = startRect.left + startRect.width;
+  let bottomEdge = startRect.top + startRect.height;
+  if (handleKey.indexOf("w") !== -1) {
+    leftEdge = Math.min(somePoint.left, rightEdge - 1);
+  }
+  if (handleKey.indexOf("e") !== -1) {
+    rightEdge = Math.max(somePoint.left, leftEdge + 1);
+  }
+  if (handleKey.indexOf("n") !== -1) {
+    topEdge = Math.min(somePoint.top, bottomEdge - 1);
+  }
+  if (handleKey.indexOf("s") !== -1) {
+    bottomEdge = Math.max(somePoint.top, topEdge + 1);
+  }
+  return {
+    left: leftEdge,
+    top: topEdge,
+    width: rightEdge - leftEdge,
+    height: bottomEdge - topEdge,
+  };
+}
+
 export default function ImageComponent() {
   const [sourceImage, setSourceImage] = useState(null);
   const [isBusy, setBusy] = useState(false);
@@ -237,6 +460,7 @@ export default function ImageComponent() {
   const [isSizeTouched, setSizeTouched] = useState(false);
   const [cropRect, setCropRect] = useState(null);
   const [aspectKey, setAspectKey] = useState("free");
+  const [cropCursor, setCropCursor] = useState("crosshair");
   const [resultData, setResultData] = useState(null);
   const previewCanvas = useRef(null);
   const cropBoxElement = useRef(null);
@@ -476,8 +700,8 @@ export default function ImageComponent() {
     };
   }, []);
 
-  // The box around the preview has a border, so the pixels are measured from
-  // the canvas itself and scaled by its real rendered size
+  // The canvas is free to shrink with the column around it, so the pixels are
+  // always measured against its real rendered size
   const pointFromEvent = (someEvent) => {
     const canvasRect = previewCanvas.current.getBoundingClientRect();
     const widthScale = canvasRect.width
@@ -500,26 +724,40 @@ export default function ImageComponent() {
     };
   };
 
+  const grabDistanceInPixels = () => {
+    const canvasRect = previewCanvas.current.getBoundingClientRect();
+    const renderedScale = canvasRect.width
+      ? canvasRect.width / sourceImage.width
+      : 1;
+    return HANDLE_GRAB_SIZE / Math.max(renderedScale, 0.0001);
+  };
+
+  const isInsideCrop = (somePoint) =>
+    somePoint.left >= safeCropRect.left &&
+    somePoint.left <= safeCropRect.left + safeCropRect.width &&
+    somePoint.top >= safeCropRect.top &&
+    somePoint.top <= safeCropRect.top + safeCropRect.height;
+
   const onCropPointerDown = (someEvent) => {
     if (!sourceImage) {
       return;
     }
     const startPoint = pointFromEvent(someEvent);
-    // While the whole image is selected there is nothing to move around, so
-    // the drag always starts a new selection instead
+    const handleKey = findCropHandle(
+      startPoint,
+      safeCropRect,
+      grabDistanceInPixels()
+    );
+    // While the whole image is selected there is nothing to move around, so a
+    // drag away from the handles starts a new selection instead
     const isWholeImage =
       safeCropRect.width === sourceImage.width &&
       safeCropRect.height === sourceImage.height;
-    const isInsideSelection =
-      !isWholeImage &&
-      startPoint.left >= safeCropRect.left &&
-      startPoint.left <= safeCropRect.left + safeCropRect.width &&
-      startPoint.top >= safeCropRect.top &&
-      startPoint.top <= safeCropRect.top + safeCropRect.height;
     dragState.current = {
       startPoint,
       startRect: safeCropRect,
-      isMoving: isInsideSelection,
+      handleKey,
+      isMoving: !handleKey && !isWholeImage && isInsideCrop(startPoint),
     };
     if (
       someEvent.currentTarget.setPointerCapture &&
@@ -530,11 +768,39 @@ export default function ImageComponent() {
   };
 
   const onCropPointerMove = (someEvent) => {
-    if (!dragState.current || !sourceImage) {
+    if (!sourceImage) {
       return;
     }
     const currentPoint = pointFromEvent(someEvent);
     const dragInfo = dragState.current;
+    if (!dragInfo) {
+      const hoverHandle = findCropHandle(
+        currentPoint,
+        safeCropRect,
+        grabDistanceInPixels()
+      );
+      const nextCursor = hoverHandle
+        ? HANDLE_CURSORS[hoverHandle]
+        : isInsideCrop(currentPoint)
+        ? "move"
+        : "crosshair";
+      if (nextCursor !== cropCursor) {
+        setCropCursor(nextCursor);
+      }
+      return;
+    }
+    if (dragInfo.handleKey) {
+      setCropRect(
+        applyAspectToHandle(
+          resizeCropRect(dragInfo.startRect, dragInfo.handleKey, currentPoint),
+          dragInfo.handleKey,
+          aspectRatio,
+          sourceImage.width,
+          sourceImage.height
+        )
+      );
+      return;
+    }
     if (dragInfo.isMoving) {
       const leftShift = currentPoint.left - dragInfo.startPoint.left;
       const topShift = currentPoint.top - dragInfo.startPoint.top;
@@ -649,18 +915,24 @@ export default function ImageComponent() {
     toast("Saved!");
   };
 
+  // Percents instead of pixels, this way the selection stays glued to the
+  // picture even when the column squeezes the canvas below its own size
   const cropWindowStyle = safeCropRect
     ? {
-        left: `${safeCropRect.left * previewScale}px`,
-        top: `${safeCropRect.top * previewScale}px`,
-        width: `${safeCropRect.width * previewScale}px`,
-        height: `${safeCropRect.height * previewScale}px`,
-        boxShadow: `0 0 0 100vmax rgba(4, 15, 22, 0.45)`,
+        left: `${(safeCropRect.left / sourceImage.width) * 100}%`,
+        top: `${(safeCropRect.top / sourceImage.height) * 100}%`,
+        width: `${(safeCropRect.width / sourceImage.width) * 100}%`,
+        height: `${(safeCropRect.height / sourceImage.height) * 100}%`,
       }
     : {};
+  const sizeDelta =
+    resultData && sourceImage && sourceImage.fileSize
+      ? Math.round((resultData.blob.size / sourceImage.fileSize - 1) * 100)
+      : null;
 
   return (
     <>
+      <ToastContainer autoClose={1000} closeOnClick />
       <TextBlock>
         <p>
           Convert, resize and crop images right in the browser, nothing is ever
@@ -685,246 +957,333 @@ export default function ImageComponent() {
           </li>
         </ul>
       </TextBlock>
-      <DropBox {...getRootProps()} isActive={isDragActive}>
-        <input {...getInputProps()} />
-        {isDragActive ? (
-          <p>Drop the image here...</p>
-        ) : (
-          <p>Drag an image here, or click to pick one</p>
-        )}
-      </DropBox>
-      {errorText ? (
-        <MessageBox className="dangerous">{errorText}</MessageBox>
+      {sourceImage ? (
+        <CompactDropBox {...getRootProps()} isActive={isDragActive}>
+          <input {...getInputProps()} />
+          <SourceName>{sourceImage.fileName}</SourceName>
+          <SourceMeta>
+            {sourceImage.formatTitle}, {sourceImage.width} by{" "}
+            {sourceImage.height}, {formatByteSize(sourceImage.fileSize)}
+          </SourceMeta>
+          <ReplaceHint>
+            {isDragActive ? "Drop to replace..." : "Click to replace"}
+          </ReplaceHint>
+        </CompactDropBox>
       ) : (
-        ""
+        <DropBox {...getRootProps()} isActive={isDragActive}>
+          <input {...getInputProps()} />
+          {isDragActive ? (
+            <p>Drop the image here...</p>
+          ) : (
+            <p>Drag an image here, or click to pick one</p>
+          )}
+        </DropBox>
       )}
+      {errorText ? <ErrorBox>{errorText}</ErrorBox> : ""}
       {!sourceImage ? (
-        <MessageBox>
+        <EmptyBox>
           {isBusy ? "Reading the image..." : "No image loaded yet."}
-        </MessageBox>
+        </EmptyBox>
       ) : (
         <>
-          <SettingsBox>
-            <OneColumn>
-              <ControlLabel>Crop, drag right on the picture:</ControlLabel>
-              <CropBox
-                ref={cropBoxElement}
-                onPointerDown={onCropPointerDown}
-                onPointerMove={onCropPointerMove}
-                onPointerUp={onCropPointerUp}
-                onPointerLeave={onCropPointerUp}
-              >
-                <canvas ref={previewCanvas} />
-                <CropShade />
-                <CropWindow style={cropWindowStyle} />
-              </CropBox>
-              <ControlRow>
-                <SelectInput value={aspectKey} onChange={onAspectChange}>
-                  {ASPECT_PRESETS.map((onePreset) => (
-                    <option key={onePreset.key} value={onePreset.key}>
-                      {onePreset.title}
-                    </option>
-                  ))}
-                </SelectInput>
-                <Button small onClick={onResetCrop}>
-                  Reset crop
-                </Button>
-              </ControlRow>
-              <ControlRow>
-                <NumberInput
-                  type="number"
-                  aria-label="Crop left"
-                  value={safeCropRect.left}
-                  onChange={onCropNumberChange("left")}
-                />
-                <NumberInput
-                  type="number"
-                  aria-label="Crop top"
-                  value={safeCropRect.top}
-                  onChange={onCropNumberChange("top")}
-                />
-              </ControlRow>
-              <ControlRow>
-                <NumberInput
-                  type="number"
-                  aria-label="Crop width"
-                  value={safeCropRect.width}
-                  onChange={onCropNumberChange("width")}
-                />
-                <NumberInput
-                  type="number"
-                  aria-label="Crop height"
-                  value={safeCropRect.height}
-                  onChange={onCropNumberChange("height")}
-                />
-              </ControlRow>
-            </OneColumn>
-            <OneColumn>
-              <ControlLabel>Output format:</ControlLabel>
-              <FormatsBox>
-                {supportedFormats.map((oneFormat) => (
-                  <FormatButton
-                    key={oneFormat.key}
-                    type="button"
-                    isActive={oneFormat.key === formatKey}
-                    onClick={() => setFormatKey(oneFormat.key)}
+          <ToolGrid columns="minmax(0, 360px) minmax(0, 1fr)">
+            <StickyColumn>
+              <Panel>
+                <PanelTitle>
+                  Crop, {safeCropRect.width} by {safeCropRect.height}
+                </PanelTitle>
+                <FieldBox>
+                  <CropBox
+                    ref={cropBoxElement}
+                    style={{ cursor: cropCursor }}
+                    onPointerDown={onCropPointerDown}
+                    onPointerMove={onCropPointerMove}
+                    onPointerUp={onCropPointerUp}
+                    onPointerLeave={onCropPointerUp}
                   >
-                    {oneFormat.title}
-                  </FormatButton>
-                ))}
-              </FormatsBox>
-              <p>{currentFormat.note}</p>
-              {currentFormat.hasQuality ? (
-                <ControlRow>
-                  <RangeInput
-                    type="range"
-                    min="1"
-                    max="100"
-                    aria-label="Quality"
-                    value={qualityValue}
+                    <canvas ref={previewCanvas} />
+                    <CropWindow style={cropWindowStyle}>
+                      {CROP_HANDLES.map((oneHandle) => (
+                        <CropHandle
+                          key={oneHandle}
+                          style={HANDLE_OFFSETS[oneHandle]}
+                        />
+                      ))}
+                    </CropWindow>
+                  </CropBox>
+                  <HintText>
+                    Drag on the picture to select, pull the handles to adjust,
+                    drag inside to move.
+                  </HintText>
+                </FieldBox>
+                <FieldBox>
+                  <ControlRow>
+                    <SelectInput
+                      value={aspectKey}
+                      aria-label="Aspect ratio"
+                      onChange={onAspectChange}
+                    >
+                      {ASPECT_PRESETS.map((onePreset) => (
+                        <option key={onePreset.key} value={onePreset.key}>
+                          {onePreset.title}
+                        </option>
+                      ))}
+                    </SelectInput>
+                    <Button small onClick={onResetCrop}>
+                      Reset crop
+                    </Button>
+                  </ControlRow>
+                </FieldBox>
+                <FieldBox>
+                  <FieldsPair>
+                    <div>
+                      <FieldLabel>Left, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Crop left"
+                        value={safeCropRect.left}
+                        onChange={onCropNumberChange("left")}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Top, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Crop top"
+                        value={safeCropRect.top}
+                        onChange={onCropNumberChange("top")}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Width, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Crop width"
+                        value={safeCropRect.width}
+                        onChange={onCropNumberChange("width")}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Height, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Crop height"
+                        value={safeCropRect.height}
+                        onChange={onCropNumberChange("height")}
+                      />
+                    </div>
+                  </FieldsPair>
+                </FieldBox>
+              </Panel>
+            </StickyColumn>
+            <ToolColumn>
+              <Panel>
+                <PanelTitle>Output format</PanelTitle>
+                <FieldBox>
+                  <FormatsBox>
+                    {supportedFormats.map((oneFormat) => (
+                      <FormatButton
+                        key={oneFormat.key}
+                        type="button"
+                        isActive={oneFormat.key === formatKey}
+                        onClick={() => setFormatKey(oneFormat.key)}
+                      >
+                        {oneFormat.title}
+                      </FormatButton>
+                    ))}
+                  </FormatsBox>
+                  <HintText>{currentFormat.note}</HintText>
+                </FieldBox>
+                {currentFormat.hasQuality ? (
+                  <FieldBox>
+                    <FieldLabel>Quality</FieldLabel>
+                    <ControlRow>
+                      <RangeInput
+                        type="range"
+                        min="1"
+                        max="100"
+                        aria-label="Quality"
+                        value={qualityValue}
+                        onChange={(someEvent) =>
+                          setQuality(parseInt(someEvent.target.value, 10))
+                        }
+                      />
+                      <RangeValue>{qualityValue}</RangeValue>
+                    </ControlRow>
+                  </FieldBox>
+                ) : (
+                  ""
+                )}
+                {currentFormat.isPalette ? (
+                  <FieldBox>
+                    <CheckLabel>
+                      <input
+                        type="checkbox"
+                        checked={isDithered}
+                        onChange={(someEvent) =>
+                          setDithered(someEvent.target.checked)
+                        }
+                      />
+                      Dither the colors
+                    </CheckLabel>
+                  </FieldBox>
+                ) : (
+                  ""
+                )}
+              </Panel>
+              <Panel>
+                <PanelTitle>Size</PanelTitle>
+                <FieldBox>
+                  <FieldsPair>
+                    <div>
+                      <FieldLabel>Width, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Output width"
+                        value={sizeInputs.width}
+                        onChange={onSizeChange("width")}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Height, px</FieldLabel>
+                      <NumberInput
+                        type="number"
+                        aria-label="Output height"
+                        value={sizeInputs.height}
+                        onChange={onSizeChange("height")}
+                      />
+                    </div>
+                  </FieldsPair>
+                </FieldBox>
+                <FieldBox>
+                  <FieldLabel>How the size is applied</FieldLabel>
+                  <SelectInput
+                    value={resizeMode}
+                    aria-label="Resize mode"
                     onChange={(someEvent) =>
-                      setQuality(parseInt(someEvent.target.value, 10))
+                      setResizeMode(someEvent.target.value)
                     }
-                  />
-                  <span>Quality: {qualityValue}</span>
-                </ControlRow>
-              ) : (
-                ""
-              )}
-              {currentFormat.isPalette ? (
-                <CheckLabel>
+                  >
+                    {RESIZE_MODES.map((oneMode) => (
+                      <option key={oneMode.key} value={oneMode.key}>
+                        {oneMode.title}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </FieldBox>
+                <FieldBox>
+                  <FieldLabel>Scale of the crop</FieldLabel>
+                  <ControlRow>
+                    {SCALE_PRESETS.map((onePercent) => (
+                      <Button
+                        key={onePercent}
+                        small
+                        ghost
+                        onClick={onScalePreset(onePercent)}
+                      >
+                        {onePercent}%
+                      </Button>
+                    ))}
+                  </ControlRow>
+                </FieldBox>
+                <FieldBox>
+                  <CheckLabel>
+                    <input
+                      type="checkbox"
+                      checked={allowUpscale}
+                      onChange={(someEvent) =>
+                        setAllowUpscale(someEvent.target.checked)
+                      }
+                    />
+                    Allow upscaling
+                  </CheckLabel>
+                </FieldBox>
+              </Panel>
+              <Panel>
+                <PanelTitle>Background</PanelTitle>
+                <CheckLabel isDisabled={currentFormat.hasAlpha === false}>
                   <input
                     type="checkbox"
-                    checked={isDithered}
+                    checked={needsBackground}
+                    disabled={currentFormat.hasAlpha === false}
                     onChange={(someEvent) =>
-                      setDithered(someEvent.target.checked)
+                      setFlattened(someEvent.target.checked)
                     }
                   />
-                  Dither the colors
+                  Put the image on a solid background
                 </CheckLabel>
-              ) : (
-                ""
-              )}
-              <ControlLabel>Size:</ControlLabel>
-              <ControlRow>
-                <NumberInput
-                  type="number"
-                  aria-label="Output width"
-                  value={sizeInputs.width}
-                  onChange={onSizeChange("width")}
-                />
-                <NumberInput
-                  type="number"
-                  aria-label="Output height"
-                  value={sizeInputs.height}
-                  onChange={onSizeChange("height")}
-                />
-              </ControlRow>
-              <ControlRow>
-                <SelectInput
-                  value={resizeMode}
-                  aria-label="Resize mode"
-                  onChange={(someEvent) =>
-                    setResizeMode(someEvent.target.value)
-                  }
-                >
-                  {RESIZE_MODES.map((oneMode) => (
-                    <option key={oneMode.key} value={oneMode.key}>
-                      {oneMode.title}
-                    </option>
-                  ))}
-                </SelectInput>
-              </ControlRow>
-              <ControlRow>
-                {SCALE_PRESETS.map((onePercent) => (
-                  <Button
-                    key={onePercent}
-                    small
-                    transparent
-                    onClick={onScalePreset(onePercent)}
-                  >
-                    {onePercent}%
-                  </Button>
-                ))}
-              </ControlRow>
-              <CheckLabel>
-                <input
-                  type="checkbox"
-                  checked={allowUpscale}
-                  onChange={(someEvent) =>
-                    setAllowUpscale(someEvent.target.checked)
-                  }
-                />
-                Allow upscaling
-              </CheckLabel>
-              <CheckLabel>
-                <input
-                  type="checkbox"
-                  checked={needsBackground}
-                  disabled={currentFormat.hasAlpha === false}
-                  onChange={(someEvent) =>
-                    setFlattened(someEvent.target.checked)
-                  }
-                />
-                Put the image on a solid background
-              </CheckLabel>
-              {needsBackground ? (
-                <ControlRow>
-                  <input
-                    type="color"
-                    aria-label="Background color"
-                    value={backgroundColor}
-                    onChange={(someEvent) =>
-                      setBackgroundColor(someEvent.target.value)
-                    }
-                  />
-                  <span>{backgroundColor}</span>
-                </ControlRow>
-              ) : (
-                ""
-              )}
-            </OneColumn>
-          </SettingsBox>
-          <ResultBox>
-            <ControlLabel>Result:</ControlLabel>
+                {needsBackground ? (
+                  <FieldBox>
+                    <ControlRow>
+                      <ColorInput
+                        type="color"
+                        aria-label="Background color"
+                        value={backgroundColor}
+                        onChange={(someEvent) =>
+                          setBackgroundColor(someEvent.target.value)
+                        }
+                      />
+                      <span>{backgroundColor}</span>
+                    </ControlRow>
+                  </FieldBox>
+                ) : (
+                  ""
+                )}
+                {currentFormat.hasAlpha === false ? (
+                  <HintText>
+                    {currentFormat.title} has no transparency, the background is
+                    always applied.
+                  </HintText>
+                ) : (
+                  ""
+                )}
+              </Panel>
+            </ToolColumn>
+          </ToolGrid>
+          <ResultSection>
+            <PanelTitle>
+              Result {isBusy ? <BusyMark>working on it...</BusyMark> : ""}
+            </PanelTitle>
             {resultData ? (
               <>
-                <ResultImage
-                  src={resultData.url}
-                  alt="Converted result"
-                  style={
-                    needsBackground
-                      ? {}
-                      : { background: settings.LIGHT_GREY_COLOR }
-                  }
-                />
-                <InfoList className="typo">
-                  <li>
-                    Source: {sourceImage.formatTitle}, {sourceImage.width}x
+                <ResultFrame isBusy={isBusy}>
+                  <ResultImage src={resultData.url} alt="Converted result" />
+                </ResultFrame>
+                <ResultFacts className="typo">
+                  <dt>Source</dt>
+                  <dd>
+                    {sourceImage.formatTitle}, {sourceImage.width} by{" "}
                     {sourceImage.height}, {formatByteSize(sourceImage.fileSize)}
-                  </li>
-                  <li>
-                    Result: {resultData.formatTitle}, {resultData.width}x
+                  </dd>
+                  <dt>Result</dt>
+                  <dd>
+                    {resultData.formatTitle}, {resultData.width} by{" "}
                     {resultData.height}, {formatByteSize(resultData.blob.size)}
-                  </li>
-                </InfoList>
-                <ButtonsBox>
+                    {sizeDelta === null ? (
+                      ""
+                    ) : (
+                      <>
+                        {" "}
+                        <DeltaText isSmaller={sizeDelta <= 0}>
+                          ({sizeDelta > 0 ? "+" : ""}
+                          {sizeDelta}%)
+                        </DeltaText>
+                      </>
+                    )}
+                  </dd>
+                </ResultFacts>
+                <ControlRow style={{ marginTop: "20px" }}>
                   <Button onClick={onDownloadClick}>
                     Download {resultData.formatTitle}
                   </Button>
-                </ButtonsBox>
+                </ControlRow>
               </>
             ) : (
-              <MessageBox>
+              <EmptyBox>
                 {isBusy ? "Working on it..." : "Nothing to show yet."}
-              </MessageBox>
+              </EmptyBox>
             )}
-            {isBusy && resultData ? (
-              <MessageBox>Working on it...</MessageBox>
-            ) : (
-              ""
-            )}
-          </ResultBox>
+          </ResultSection>
         </>
       )}
     </>

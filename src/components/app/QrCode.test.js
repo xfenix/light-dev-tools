@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import QrCodeComponent, { buildSvgMarkup } from "./QrCode";
+import QrCodeComponent, {
+  buildSvgMarkup,
+  computeContrastRatio,
+} from "./QrCode";
 import React from "react";
 
 let currentContainer = null;
@@ -54,4 +57,11 @@ test("renders empty state, then canvas and svg, then recovers from overflow", ()
   expect(container.querySelector("canvas")).not.toBeNull();
   expect(screen.getByText("Download SVG")).toBeInTheDocument();
   consoleError.mockRestore();
+});
+
+test("contrast ratio follows the wcag numbers", () => {
+  expect(computeContrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 1);
+  expect(computeContrastRatio("#ffffff", "#ffffff")).toBeCloseTo(1, 2);
+  // the classic yellow on white, the one scanners hate
+  expect(computeContrastRatio("#ffff00", "#ffffff")).toBeLessThan(1.2);
 });

@@ -24,7 +24,11 @@ import {
   lzwEncodeIndexes,
 } from "../../misc/GifEncoder";
 
-import ImageComponent from "./Image";
+import ImageComponent, {
+  applyAspectToHandle,
+  findCropHandle,
+  resizeCropRect,
+} from "./Image";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
@@ -445,4 +449,101 @@ test("the tool renders the drop zone and waits for a file", () => {
   render(<ImageComponent />);
   expect(screen.getByText(/Drag an image here/)).toBeInTheDocument();
   expect(screen.getByText("No image loaded yet.")).toBeInTheDocument();
+});
+
+test("crop handles are found near the edges and the corners win", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  expect(findCropHandle({ left: 102, top: 103 }, someRect, 10)).toBe("nw");
+  expect(findCropHandle({ left: 300, top: 298 }, someRect, 10)).toBe("se");
+  expect(findCropHandle({ left: 200, top: 100 }, someRect, 10)).toBe("n");
+  expect(findCropHandle({ left: 300, top: 200 }, someRect, 10)).toBe("e");
+  expect(findCropHandle({ left: 200, top: 200 }, someRect, 10)).toBe("");
+  expect(findCropHandle({ left: 20, top: 20 }, someRect, 10)).toBe("");
+});
+
+test("resizing moves the dragged side only and never turns the rect inside out", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  expect(resizeCropRect(someRect, "se", { left: 260, top: 240 })).toEqual({
+    left: 100,
+    top: 100,
+    width: 160,
+    height: 140,
+  });
+  expect(resizeCropRect(someRect, "nw", { left: 140, top: 130 })).toEqual({
+    left: 140,
+    top: 130,
+    width: 160,
+    height: 170,
+  });
+  expect(resizeCropRect(someRect, "w", { left: 500, top: 500 })).toEqual({
+    left: 299,
+    top: 100,
+    width: 1,
+    height: 200,
+  });
+});
+
+test("the nearer edge takes the drag on a selection smaller than the grab distance", () => {
+  const tinyRect = { left: 100, top: 100, width: 8, height: 6 };
+  expect(findCropHandle({ left: 107, top: 105 }, tinyRect, 14)).toBe("se");
+  expect(findCropHandle({ left: 101, top: 101 }, tinyRect, 14)).toBe("nw");
+  // exactly in the middle the first edge keeps the drag, but it stays reachable
+  expect(findCropHandle({ left: 104, top: 103 }, tinyRect, 14)).toBe("nw");
+});
+
+test("a locked ratio moves the dragged side only", () => {
+  const someRect = { left: 100, top: 100, width: 200, height: 200 };
+  // the bottom is pulled down, the height decides and the top stays
+  const pulledDown = applyAspectToHandle(
+    resizeCropRect(someRect, "s", { left: 300, top: 400 }),
+    "s",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledDown).toEqual({ left: 100, top: 100, width: 300, height: 300 });
+
+  // the top is pulled up, the bottom edge has to stay where it was
+  const pulledUp = applyAspectToHandle(
+    resizeCropRect(someRect, "n", { left: 300, top: 40 }),
+    "n",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledUp.top + pulledUp.height).toBe(300);
+  expect(pulledUp).toEqual({ left: 100, top: 40, width: 260, height: 260 });
+
+  // the left is pulled aside, the right edge has to stay where it was
+  const pulledAside = applyAspectToHandle(
+    resizeCropRect(someRect, "w", { left: 50, top: 200 }),
+    "w",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledAside.left + pulledAside.width).toBe(300);
+  expect(pulledAside).toEqual({ left: 50, top: 100, width: 250, height: 250 });
+
+  // the north west corner keeps the south east one in place
+  const pulledCorner = applyAspectToHandle(
+    resizeCropRect(someRect, "nw", { left: 20, top: 60 }),
+    "nw",
+    1,
+    1000,
+    1000
+  );
+  expect(pulledCorner.left + pulledCorner.width).toBe(300);
+  expect(pulledCorner.top + pulledCorner.height).toBe(300);
+
+  // and the selection never leaves the picture
+  const oversized = applyAspectToHandle(
+    { left: 900, top: 900, width: 400, height: 400 },
+    "se",
+    2,
+    1000,
+    1000
+  );
+  expect(oversized.left + oversized.width).toBeLessThanOrEqual(1000);
+  expect(oversized.top + oversized.height).toBeLessThanOrEqual(1000);
 });
