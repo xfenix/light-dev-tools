@@ -1,18 +1,19 @@
-import React, { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 
 import Hashes from "jshashes";
 import RadioGroup from "../generic/RadioGroup";
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
 
-const AVAIL_HASHES = ["MD5", "SHA1", "SHA256", "SHA512"];
+const AVAIL_HASHES = ["MD5", "SHA1", "SHA256", "SHA512"] as const;
+type HashName = (typeof AVAIL_HASHES)[number];
 
 export default function HashComponent() {
-  const [currentHash, setCurrentHash] = useState(AVAIL_HASHES[0]);
+  const [currentHash, setCurrentHash] = useState<HashName>(AVAIL_HASHES[0]);
   const [inputValue, setInput] = useState("");
   const [outputValue, setOutput] = useState("");
 
-  const onHashInput = (event) => {
+  const onHashInput = (event: TextChangeEvent) => {
     const newValue = event.target.value;
     if (newValue !== inputValue) {
       setInput(newValue);
@@ -20,9 +21,10 @@ export default function HashComponent() {
     }
   };
 
-  const onHashSelect = (event) => {
-    setCurrentHash(event.target.value);
-    setOutput(new Hashes[event.target.value]().hex(inputValue));
+  const onHashSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const hashName = event.target.value as HashName;
+    setCurrentHash(hashName);
+    setOutput(new Hashes[hashName]().hex(inputValue));
   };
 
   return (

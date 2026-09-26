@@ -1,20 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
 
 export default function CalculatorComponent() {
   const [currentValue, setCurrentCalcValue] = useState("");
   const [calculatedResultValue, setCalculatedResultValue] = useState("");
 
-  const safeEval = (expressionStr) => {
-    return new Function("return " + expressionStr)(); // eslint-disable-line no-new-func
+  const safeEval = (expressionStr: string): unknown => {
+    // oxlint-disable-next-line no-new-func
+    return new Function("return " + expressionStr)();
   };
 
-  const onChangeCalc = (event) => {
+  const onChangeCalc = (event: TextChangeEvent) => {
     setCurrentCalcValue(event.target.value);
     try {
-      setCalculatedResultValue(safeEval(event.target.value));
+      setCalculatedResultValue(String(safeEval(event.target.value)));
     } catch {}
   };
 

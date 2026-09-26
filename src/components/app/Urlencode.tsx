@@ -1,30 +1,28 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-import { Base64 } from "js-base64";
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
 
-export default function Base64Component() {
+export default function UrlencodeComponent() {
   const [inputValue, setInput] = useState("");
   const [outputValue, setOutput] = useState("");
   const [isInputGood, setInputStatusIsGood] = useState(true);
 
-  const setNewInputValue = (event) => {
+  const setNewInputValue = (event: TextChangeEvent) => {
     const newValue = event.target.value;
     if (newValue !== inputValue) {
-      const newOutputValue = Base64.encode(newValue);
       setInput(newValue);
-      setOutput(newOutputValue);
+      setOutput(encodeURI(newValue));
       setInputStatusIsGood(true);
     }
   };
 
-  const setNewOutputValue = (event) => {
+  const setNewOutputValue = (event: TextChangeEvent) => {
     const newValue = event.target.value;
     if (newValue !== outputValue) {
-      setOutput(newValue);
       try {
-        setInput(Base64.decode(newValue));
+        setOutput(newValue);
+        setInput(decodeURI(newValue));
         setInputStatusIsGood(true);
       } catch (error) {
         setInput(
@@ -38,30 +36,24 @@ export default function Base64Component() {
   return (
     <>
       <TextBlock>
-        <p>Usage scenarios:</p>
-        <ul>
-          <li>Place plain text in first input and get base64 from second</li>
-          <li>
-            Or place base64 encoded payload in second and get text in first
-          </li>
-        </ul>
+        <p>Just helper for url encoding & decoding.</p>
       </TextBlock>
       <Textarea
-        label="Plain text"
-        onChange={setNewInputValue}
+        label="Url to encode"
         value={inputValue}
         className={isInputGood ? "" : "errorfield"}
         wrapperClassName="inputgroup"
+        onChange={setNewInputValue}
         hasClipboardButton
-        medium
+        small
       ></Textarea>
       <Textarea
-        label="Base64"
+        label="Url to decode"
+        value={outputValue}
         onChange={setNewOutputValue}
         wrapperClassName="inputgroup"
-        value={outputValue}
         hasClipboardButton
-        medium
+        small
       ></Textarea>
     </>
   );

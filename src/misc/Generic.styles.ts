@@ -1,5 +1,3 @@
-import "react-toastify/dist/ReactToastify.css";
-
 import * as settings from "./Settings";
 
 import { createGlobalStyle } from "styled-components";
@@ -183,10 +181,5 @@ strong, b {
 .topmenu__item:hover {
   color: ${settings.BLACK_COLOR};
   border-bottom-color: ${settings.BLACK_COLOR};
-}
-
-/* Some overrides */
-.emoji-mart-emoji {
-  outline: none;
 }
 `;

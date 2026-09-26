@@ -1,11 +1,21 @@
 import * as settings from "../../misc/Settings";
 
-import React, { useEffect, useState } from "react";
+import {
+  type ChangeEvent,
+  type ComponentType,
+  useEffect,
+  useState,
+} from "react";
 
-import { ChromePicker } from "react-color";
+import { ChromePicker, type ChromePickerProps } from "react-color";
 import styled from "styled-components";
 
 const SHORT_HEX_LENGTH = 3;
+
+// The picker takes a width, the typings simply do not know about it
+const FluidChromePicker = ChromePicker as ComponentType<
+  ChromePickerProps & { width: string }
+>;
 
 const FieldWrap = styled.div`
   min-width: 0;
@@ -76,7 +86,7 @@ const PickerBox = styled.div`
   }
 `;
 
-export function expandHexValue(someValue) {
+export function expandHexValue(someValue: string): string {
   const cleanValue = String(someValue).trim().replace("#", "").toLowerCase();
   if (!/^[0-9a-f]+$/.test(cleanValue)) {
     return "";
@@ -87,7 +97,15 @@ export function expandHexValue(someValue) {
   return cleanValue.length === SHORT_HEX_LENGTH * 2 ? `#${cleanValue}` : "";
 }
 
-export default function ColorField(props) {
+type ColorFieldProps = {
+  label: string;
+  value: string;
+  isOpen: boolean;
+  onChange: (hexValue: string) => void;
+  onToggle: (isOpen: boolean) => void;
+};
+
+export default function ColorField(props: ColorFieldProps) {
   const [draftValue, setDraftValue] = useState(props.value);
 
   useEffect(() => {
@@ -98,7 +116,7 @@ export default function ColorField(props) {
     if (!props.isOpen) {
       return undefined;
     }
-    const onKeyDown = (someEvent) => {
+    const onKeyDown = (someEvent: KeyboardEvent) => {
       if (someEvent.key === "Escape") {
         props.onToggle(false);
       }
@@ -107,7 +125,7 @@ export default function ColorField(props) {
     return () => document.removeEventListener("keydown", onKeyDown);
   });
 
-  const onHexChange = (someEvent) => {
+  const onHexChange = (someEvent: ChangeEvent<HTMLInputElement>) => {
     const nextValue = someEvent.target.value;
     setDraftValue(nextValue);
     const fullValue = expandHexValue(nextValue);
@@ -146,7 +164,7 @@ export default function ColorField(props) {
       </FieldRow>
       {props.isOpen ? (
         <PickerBox>
-          <ChromePicker
+          <FluidChromePicker
             color={props.value}
             width="100%"
             onChange={(colorObject) => props.onChange(colorObject.hex)}

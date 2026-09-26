@@ -1,8 +1,6 @@
-import "emoji-mart/css/emoji-mart.css";
+import EmojiPicker, { type PickedEmoji } from "../generic/EmojiPicker";
+import { useState } from "react";
 
-import React, { useState } from "react";
-
-import { Picker } from "emoji-mart/dist-modern/index";
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
 import styled from "styled-components";
@@ -29,12 +27,8 @@ const OneFlexColumn = styled.div`
 export default function Emoji2HexComponent() {
   const [currentEmojiHexCode, setCurrentEmojiCode] = useState("");
 
-  const convertEmojiPartToCode = (oneEmoji) => {
-    let comp;
-    if (oneEmoji.length === 1) {
-      comp = oneEmoji.charCodeAt(0);
-    }
-    comp =
+  const convertEmojiPartToCode = (oneEmoji: string) => {
+    let comp =
       (oneEmoji.charCodeAt(0) - 0xd800) * 0x400 +
       (oneEmoji.charCodeAt(1) - 0xdc00) +
       0x10000;
@@ -44,8 +38,8 @@ export default function Emoji2HexComponent() {
     return comp;
   };
 
-  const convertEmojiToHex = (emojiNative) => {
-    let outputBuffer = [];
+  const convertEmojiToHex = (emojiNative: string) => {
+    const outputBuffer: string[] = [];
     for (let letter of emojiNative) {
       let emojiCode = convertEmojiPartToCode(letter);
       if (isNaN(emojiCode)) {
@@ -56,7 +50,7 @@ export default function Emoji2HexComponent() {
     return outputBuffer.join("");
   };
 
-  const onChangeCurrentEmoji = (emojiObject) => {
+  const onChangeCurrentEmoji = (emojiObject: PickedEmoji) => {
     setCurrentEmojiCode(convertEmojiToHex(emojiObject.native));
   };
 
@@ -67,11 +61,7 @@ export default function Emoji2HexComponent() {
       </TextBlock>
       <FlexWrap>
         <OneFlexColumn>
-          <Picker
-            native={true}
-            onSelect={onChangeCurrentEmoji}
-            title="Pick emoji"
-          />
+          <EmojiPicker onSelect={onChangeCurrentEmoji} />
         </OneFlexColumn>
         <OneFlexColumn>
           <Textarea
