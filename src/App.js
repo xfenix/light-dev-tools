@@ -13,6 +13,7 @@ import GitHubButton from "react-github-btn";
 import HashComponent from "./components/app/Hash";
 import ImageComponent from "./components/app/Image";
 import QrCodeComponent from "./components/app/QrCode";
+import QrDecodeComponent from "./components/app/QrDecode";
 import React from "react";
 import { Reset } from "styled-reset";
 import TypografComponent from "./components/app/Typograf";
@@ -68,6 +69,11 @@ const MAIN_MENU = [
     slug: "qr",
     component: QrCodeComponent,
     title: "QR code",
+  },
+  {
+    slug: "qr-decode",
+    component: QrDecodeComponent,
+    title: "QR decode",
   },
 ];
 
