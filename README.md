@@ -14,3 +14,16 @@ Current tools support:
 - More tools currently under development...
 
 Project hostend on github pages: https://xfenix.github.io/light-dev-tools/.
+
+## Development
+
+Written in TypeScript with React, built by Vite. Node.js 22.22 or newer is needed.
+
+```sh
+npm install
+npm start          # dev server
+npm test           # tests in watch mode
+npm run typecheck  # tsc
+npm run lint       # oxlint
+npm run build      # production build into ./build
+```

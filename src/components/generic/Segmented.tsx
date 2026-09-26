@@ -1,6 +1,6 @@
 import * as settings from "../../misc/Settings";
 
-import React from "react";
+import type { ChangeEvent } from "react";
 import styled from "styled-components";
 
 const SegmentedBox = styled.div`
@@ -9,16 +9,16 @@ const SegmentedBox = styled.div`
   gap: 8px;
 `;
 
-const OneSegment = styled.label`
+const OneSegment = styled.label<{ $isActive: boolean }>`
   position: relative;
   display: block;
   padding: 7px 14px;
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid
     ${(props) =>
-      props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
+      props.$isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   background: ${(props) =>
-    props.isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
+    props.$isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
   font-size: 90%;
   line-height: 1.2;
   cursor: pointer;
@@ -43,14 +43,21 @@ const HiddenRadio = styled.input`
   cursor: pointer;
 `;
 
-export default function Segmented(props) {
+type SegmentedProps = {
+  titleValues: readonly (string | number)[];
+  value: string | number;
+  groupKey: string;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+};
+
+export default function Segmented(props: SegmentedProps) {
   const currentValue = String(props.value);
   return (
     <SegmentedBox>
       {props.titleValues.map((oneTitle) => {
         const oneValue = String(oneTitle);
         return (
-          <OneSegment key={oneValue} isActive={oneValue === currentValue}>
+          <OneSegment key={oneValue} $isActive={oneValue === currentValue}>
             <HiddenRadio
               type="radio"
               name={props.groupKey}

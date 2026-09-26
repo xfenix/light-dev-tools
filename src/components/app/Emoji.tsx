@@ -1,11 +1,9 @@
-import "emoji-mart/css/emoji-mart.css";
-
-import React, { useState } from "react";
+import EmojiPicker, { type PickedEmoji } from "../generic/EmojiPicker";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
+import { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 
-import { Picker } from "emoji-mart/dist-modern/index";
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
 
 const FlexWrap = styled.div`
   display: grid;
@@ -39,11 +37,11 @@ const OverrideStylesForTextarea = createGlobalStyle`
 export default function EmojiComponent() {
   const [currentEmojiFieldValue, setCurrentEmoji] = useState("");
 
-  const addEmoji = (emojiObject) => {
-    setCurrentEmoji(currentEmojiFieldValue + emojiObject.native);
+  const addEmoji = (emojiObject: PickedEmoji) => {
+    setCurrentEmoji((previousValue) => previousValue + emojiObject.native);
   };
 
-  const onChangeCurrentEmoji = (event) => {
+  const onChangeCurrentEmoji = (event: TextChangeEvent) => {
     setCurrentEmoji(event.target.value);
   };
 
@@ -58,7 +56,7 @@ export default function EmojiComponent() {
       </TextBlock>
       <FlexWrap>
         <OneFlexColumn>
-          <Picker native={true} onSelect={addEmoji} title="Pick emoji" />
+          <EmojiPicker onSelect={addEmoji} />
         </OneFlexColumn>
         <OneFlexColumn>
           <Textarea

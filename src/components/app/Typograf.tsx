@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
 import Typograf from "typograf";
 
 export default function TypografComponent() {
@@ -9,7 +9,7 @@ export default function TypografComponent() {
   const [outputValue, setCurrentOutputValue] = useState("");
   const typografActor = new Typograf({ locale: ["ru", "en-US"] });
 
-  const onChangeInputText = (event) => {
+  const onChangeInputText = (event: TextChangeEvent) => {
     setCurrentInputValue(event.target.value);
     setCurrentOutputValue(typografActor.execute(event.target.value));
   };

@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import styled from "styled-components";
 
 const InnerTextBlock = styled.div`
@@ -11,7 +11,7 @@ const Header = styled.h4`
   margin-bottom: 10px;
 `;
 
-export default function TextBlockBefore(props) {
+export default function TextBlockBefore(props: { children?: ReactNode }) {
   return (
     <InnerTextBlock className="typo">
       <Header>Description</Header>

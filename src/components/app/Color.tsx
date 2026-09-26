@@ -1,7 +1,5 @@
-import "emoji-mart/css/emoji-mart.css";
-
-import { ChromePicker, SwatchesPicker } from "react-color";
-import React, { useState } from "react";
+import { ChromePicker, type ColorResult, SwatchesPicker } from "react-color";
+import { useState } from "react";
 
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
@@ -48,9 +46,9 @@ const PickersBox = styled.div`
 `;
 
 export default function ColorComponent() {
-  const [currentColor, setCurrentColor] = useState({});
+  const [currentColor, setCurrentColor] = useState<ColorResult | null>(null);
 
-  const onChangeColor = (colorObject) => {
+  const onChangeColor = (colorObject: ColorResult) => {
     setCurrentColor(colorObject);
   };
 
@@ -71,7 +69,7 @@ export default function ColorComponent() {
             hasClipboardButton
             compactClipboardButton
             readOnly
-            value={currentColor.hex}
+            value={currentColor ? currentColor.hex : ""}
           />
           <Textarea
             label="RGBA"
@@ -81,7 +79,7 @@ export default function ColorComponent() {
             compactClipboardButton
             readOnly
             value={
-              currentColor.rgb
+              currentColor
                 ? `rgba(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b}, ${currentColor.rgb.a})`
                 : ""
             }
@@ -94,7 +92,7 @@ export default function ColorComponent() {
             compactClipboardButton
             readOnly
             value={
-              currentColor.rgb
+              currentColor
                 ? `rgb(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b})`
                 : ""
             }
@@ -102,11 +100,11 @@ export default function ColorComponent() {
         </InputsBox>
         <PickersBox>
           <ChromePicker
-            color={currentColor ? currentColor.rgb : ""}
+            color={currentColor ? currentColor.rgb : undefined}
             onChange={onChangeColor}
           />
           <SwatchesPicker
-            color={currentColor ? currentColor.rgb : ""}
+            color={currentColor ? currentColor.rgb : undefined}
             onChange={onChangeColor}
           />
         </PickersBox>

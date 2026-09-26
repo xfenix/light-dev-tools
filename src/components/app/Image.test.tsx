@@ -29,10 +29,13 @@ import ImageComponent, {
   findCropHandle,
   resizeCropRect,
 } from "./Image";
-import React from "react";
 import { render, screen } from "@testing-library/react";
 
-const makeFlatPixels = (imageWidth, imageHeight, colorValues) => {
+const makeFlatPixels = (
+  imageWidth: number,
+  imageHeight: number,
+  colorValues: number[]
+) => {
   const somePixels = new Uint8ClampedArray(imageWidth * imageHeight * 4);
   for (let pixelOffset = 0; pixelOffset < somePixels.length; pixelOffset += 4) {
     somePixels.set(colorValues, pixelOffset);
@@ -42,13 +45,13 @@ const makeFlatPixels = (imageWidth, imageHeight, colorValues) => {
 
 // The gif spec packs the codes into a bit stream, this is the reading side of
 // it, needed to check that the encoder is not lying to the decoders
-const lzwDecodeIndexes = (streamBytes, minCodeSize) => {
+const lzwDecodeIndexes = (streamBytes: number[], minCodeSize: number) => {
   const clearCode = 1 << minCodeSize;
   const endCode = clearCode + 1;
   let codeSize = minCodeSize + 1;
-  let codeTable = [];
-  let previousEntry = null;
-  const resultIndexes = [];
+  let codeTable: number[][] = [];
+  let previousEntry: number[] | null = null;
+  const resultIndexes: number[] = [];
   let bitsBuffer = 0;
   let bitsCount = 0;
   let byteIndex = 0;
@@ -84,13 +87,15 @@ const lzwDecodeIndexes = (streamBytes, minCodeSize) => {
     if (codeValue === endCode) {
       return resultIndexes;
     }
-    let currentEntry = null;
+    let currentEntry: number[];
     if (codeValue < codeTable.length) {
       currentEntry = codeTable[codeValue];
-    } else {
+    } else if (previousEntry) {
       currentEntry = previousEntry.concat([previousEntry[0]]);
+    } else {
+      throw new Error("The stream starts with an unknown code");
     }
-    resultIndexes.push.apply(resultIndexes, currentEntry);
+    resultIndexes.push(...currentEntry);
     if (previousEntry) {
       codeTable.push(previousEntry.concat([currentEntry[0]]));
       if (codeTable.length >= 1 << codeSize && codeSize < 12) {
@@ -101,8 +106,8 @@ const lzwDecodeIndexes = (streamBytes, minCodeSize) => {
   }
 };
 
-const readGifSubBlocks = (fileBytes, fromOffset) => {
-  const streamBytes = [];
+const readGifSubBlocks = (fileBytes: Uint8Array, fromOffset: number) => {
+  const streamBytes: number[] = [];
   let currentOffset = fromOffset;
   while (fileBytes[currentOffset] !== 0) {
     const blockSize = fileBytes[currentOffset];
@@ -378,7 +383,7 @@ test("gif file carries the palette and the pixels of the image", () => {
     somePixels.set(isRed ? [255, 0, 0, 255] : [0, 0, 255, 255], pixelIndex * 4);
   }
   const gifBytes = encodeGif(somePixels, 4, 4, { dither: false });
-  expect(String.fromCharCode.apply(null, gifBytes.slice(0, 6))).toBe("GIF89a");
+  expect(String.fromCharCode(...gifBytes.slice(0, 6))).toBe("GIF89a");
   expect(gifBytes[gifBytes.length - 1]).toBe(59);
 
   const paletteBits = (gifBytes[10] & 7) + 1;

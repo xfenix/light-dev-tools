@@ -12,25 +12,33 @@ import {
   ToolColumn,
   ToolGrid,
 } from "../../misc/Controls.styles";
-import React, { useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ChangeEvent,
+  Component,
+  type ReactNode,
+  useRef,
+  useState,
+} from "react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 
 import Button from "../generic/Button";
 import ColorField from "../generic/ColorField";
 import Segmented from "../generic/Segmented";
 import TextBlock from "../generic/TextBlockBefore";
-import Textarea from "../generic/Textarea";
+import Textarea, { type TextChangeEvent } from "../generic/Textarea";
 import copy from "copy-to-clipboard";
 import { parseHexColor } from "../../misc/ImageProcessing";
 import styled from "styled-components";
 import { toast } from "react-toastify";
 
-const AVAIL_LEVELS = ["L", "M", "Q", "H"];
+const AVAIL_LEVELS = ["L", "M", "Q", "H"] as const;
+type QrLevel = (typeof AVAIL_LEVELS)[number];
 const AVAIL_SIZES = ["128", "256", "512", "1000", "2000"];
 // The specification asks for a quiet zone of 4 modules, so it goes first and
 // becomes the default one, the rest are here for tighter layouts
 const AVAIL_MARGINS = ["4", "2", "1", "0"];
-const LEVEL_NOTES = {
+const LEVEL_NOTES: Record<QrLevel, string> = {
   L: "Recovers about 7% of a damaged code and holds the most data.",
   M: "Recovers about 15%, a good default for screens and print.",
   Q: "Recovers about 25%, survives a scratched or dirty sticker.",
@@ -42,7 +50,7 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 // The renderer hardcodes the pixel size as an inline style, which would blow
 // the layout apart on the big sizes, so the preview always fills its own box.
 // Only the preview is affected, downloads still use the selected size
-const PREVIEW_STYLE = {
+const PREVIEW_STYLE: CSSProperties = {
   width: "100%",
   height: "auto",
   display: "block",
@@ -90,7 +98,7 @@ const MessageBox = styled.p`
 
 // A node living inside an html document is serialized without the namespace
 // declaration, but a standalone .svg file is worthless without it
-export function buildSvgMarkup(svgNode) {
+export function buildSvgMarkup(svgNode: SVGSVGElement) {
   const markupString =
     typeof XMLSerializer === "function"
       ? new XMLSerializer().serializeToString(svgNode)
@@ -101,14 +109,14 @@ export function buildSvgMarkup(svgNode) {
   return markupString.replace("<svg", `<svg xmlns="${SVG_NAMESPACE}"`);
 }
 
-function channelLuminance(channelValue) {
+function channelLuminance(channelValue: number) {
   const plainValue = channelValue / 255;
   return plainValue <= 0.03928
     ? plainValue / 12.92
     : Math.pow((plainValue + 0.055) / 1.055, 2.4);
 }
 
-export function computeRelativeLuminance(hexValue) {
+export function computeRelativeLuminance(hexValue: string) {
   const colorParts = parseHexColor(hexValue);
   return (
     0.2126 * channelLuminance(colorParts.red) +
@@ -119,7 +127,7 @@ export function computeRelativeLuminance(hexValue) {
 
 // The plain wcag ratio, a scanner cares about the very same thing a reader
 // does: how far the two colors are from each other
-export function computeContrastRatio(firstHex, secondHex) {
+export function computeContrastRatio(firstHex: string, secondHex: string) {
   const firstLuminance = computeRelativeLuminance(firstHex);
   const secondLuminance = computeRelativeLuminance(secondHex);
   const lightOne = Math.max(firstLuminance, secondLuminance);
@@ -127,7 +135,7 @@ export function computeContrastRatio(firstHex, secondHex) {
   return (lightOne + 0.05) / (darkOne + 0.05);
 }
 
-function saveFile(fileHref, fileName, onDone) {
+function saveFile(fileHref: string, fileName: string, onDone?: () => void) {
   const linkElement = document.createElement("a");
   linkElement.href = fileHref;
   linkElement.download = fileName;
@@ -139,11 +147,13 @@ function saveFile(fileHref, fileName, onDone) {
   }
 }
 
-class QrCodeErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { isBroken: false };
-  }
+type BoundaryProps = { onError?: () => void; children: ReactNode };
+
+class QrCodeErrorBoundary extends Component<
+  BoundaryProps,
+  { isBroken: boolean }
+> {
+  state = { isBroken: false };
 
   static getDerivedStateFromError() {
     return { isBroken: true };
@@ -165,7 +175,7 @@ class QrCodeErrorBoundary extends React.Component {
 
 export default function QrCodeComponent() {
   const [inputValue, setInput] = useState("");
-  const [currentLevel, setLevel] = useState(AVAIL_LEVELS[0]);
+  const [currentLevel, setLevel] = useState<QrLevel>(AVAIL_LEVELS[0]);
   const [currentSize, setSize] = useState(AVAIL_SIZES[0]);
   const [currentMargin, setMargin] = useState(AVAIL_MARGINS[0]);
   const [foregroundColor, setForegroundColor] = useState(settings.BLACK_COLOR);
@@ -174,10 +184,10 @@ export default function QrCodeComponent() {
   // Only one picker is unfolded at a time, two of them at once would push the
   // rest of the page way too far down
   const [openPickerKey, setOpenPickerKey] = useState("");
-  const canvasElement = useRef(null);
-  const svgElement = useRef(null);
+  const canvasElement = useRef<HTMLCanvasElement>(null);
+  const svgElement = useRef<SVGSVGElement>(null);
 
-  const onQrInput = (event) => {
+  const onQrInput = (event: TextChangeEvent) => {
     const newValue = event.target.value;
     if (newValue !== inputValue) {
       setInput(newValue);
@@ -185,9 +195,11 @@ export default function QrCodeComponent() {
     }
   };
 
-  const makeSelectHandler = (setterFunction) => {
-    return (event) => {
-      setterFunction(event.target.value);
+  const makeSelectHandler = <SomeValue extends string>(
+    setterFunction: (nextValue: SomeValue) => void
+  ) => {
+    return (event: ChangeEvent<HTMLInputElement>) => {
+      setterFunction(event.target.value as SomeValue);
       setQrIsBroken(false);
     };
   };
@@ -276,7 +288,7 @@ export default function QrCodeComponent() {
         wrapperClassName="inputgroup"
         small
       ></Textarea>
-      <ToolGrid columns="minmax(0, 1fr) minmax(0, 280px)">
+      <ToolGrid $columns="minmax(0, 1fr) minmax(0, 280px)">
         <ToolColumn>
           <Panel>
             <PanelTitle>Code</PanelTitle>
@@ -285,7 +297,7 @@ export default function QrCodeComponent() {
               <Segmented
                 titleValues={AVAIL_LEVELS}
                 value={currentLevel}
-                onChange={makeSelectHandler(setLevel)}
+                onChange={makeSelectHandler<QrLevel>(setLevel)}
                 groupKey="qrlevel"
               />
               <HintText>{LEVEL_NOTES[currentLevel]}</HintText>
