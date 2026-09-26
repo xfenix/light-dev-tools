@@ -22,8 +22,11 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 14.x
+          node-version: 22.x
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
       - run: npm run predeploy
       - name: Publish
         # Pull requests are built to check them, but only master goes live
