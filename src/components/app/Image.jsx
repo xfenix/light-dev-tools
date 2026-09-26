@@ -94,14 +94,14 @@ const CHECKER_BACKGROUND = `
 const DropBox = styled.div`
   border: 2px dashed
     ${(props) =>
-      props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
+      props.$isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   border-radius: ${settings.BORDER_RADIUS};
   padding: 30px;
   text-align: center;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   background: ${(props) =>
-    props.isActive ? settings.LIGHT_GREEN_COLOR : "transparent"};
+    props.$isActive ? settings.LIGHT_GREEN_COLOR : "transparent"};
 
   &:hover {
     border-color: ${settings.BLACK_COLOR};
@@ -180,9 +180,9 @@ const FormatButton = styled.button`
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid
     ${(props) =>
-      props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
+      props.$isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   background: ${(props) =>
-    props.isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
+    props.$isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
   font-family: inherit;
   font-size: 80%;
   text-transform: uppercase;
@@ -224,7 +224,7 @@ const ResultFrame = styled.div`
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
   transition: opacity 0.2s;
-  opacity: ${(props) => (props.isBusy ? 0.5 : 1)};
+  opacity: ${(props) => (props.$isBusy ? 0.5 : 1)};
 `;
 const ResultImage = styled.img`
   display: block;
@@ -244,7 +244,7 @@ const ResultFacts = styled.dl`
 `;
 const DeltaText = styled.span`
   color: ${(props) =>
-    props.isSmaller ? settings.BLACK_COLOR : settings.RED_COLOR};
+    props.$isSmaller ? settings.BLACK_COLOR : settings.RED_COLOR};
 `;
 const EmptyBox = styled.div`
   margin-top: 20px;
@@ -958,7 +958,7 @@ export default function ImageComponent() {
         </ul>
       </TextBlock>
       {sourceImage ? (
-        <CompactDropBox {...getRootProps()} isActive={isDragActive}>
+        <CompactDropBox {...getRootProps()} $isActive={isDragActive}>
           <input {...getInputProps()} />
           <SourceName>{sourceImage.fileName}</SourceName>
           <SourceMeta>
@@ -970,7 +970,7 @@ export default function ImageComponent() {
           </ReplaceHint>
         </CompactDropBox>
       ) : (
-        <DropBox {...getRootProps()} isActive={isDragActive}>
+        <DropBox {...getRootProps()} $isActive={isDragActive}>
           <input {...getInputProps()} />
           {isDragActive ? (
             <p>Drop the image here...</p>
@@ -1085,7 +1085,7 @@ export default function ImageComponent() {
                       <FormatButton
                         key={oneFormat.key}
                         type="button"
-                        isActive={oneFormat.key === formatKey}
+                        $isActive={oneFormat.key === formatKey}
                         onClick={() => setFormatKey(oneFormat.key)}
                       >
                         {oneFormat.title}
@@ -1246,7 +1246,7 @@ export default function ImageComponent() {
             </PanelTitle>
             {resultData ? (
               <>
-                <ResultFrame isBusy={isBusy}>
+                <ResultFrame $isBusy={isBusy}>
                   <ResultImage src={resultData.url} alt="Converted result" />
                 </ResultFrame>
                 <ResultFacts className="typo">
@@ -1264,7 +1264,7 @@ export default function ImageComponent() {
                     ) : (
                       <>
                         {" "}
-                        <DeltaText isSmaller={sizeDelta <= 0}>
+                        <DeltaText $isSmaller={sizeDelta <= 0}>
                           ({sizeDelta > 0 ? "+" : ""}
                           {sizeDelta}%)
                         </DeltaText>

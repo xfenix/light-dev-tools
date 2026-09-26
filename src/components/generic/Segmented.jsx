@@ -16,9 +16,9 @@ const OneSegment = styled.label`
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid
     ${(props) =>
-      props.isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
+      props.$isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
   background: ${(props) =>
-    props.isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
+    props.$isActive ? settings.LIGHT_GREEN_COLOR : settings.WHITE_COLOR};
   font-size: 90%;
   line-height: 1.2;
   cursor: pointer;
@@ -50,7 +50,7 @@ export default function Segmented(props) {
       {props.titleValues.map((oneTitle) => {
         const oneValue = String(oneTitle);
         return (
-          <OneSegment key={oneValue} isActive={oneValue === currentValue}>
+          <OneSegment key={oneValue} $isActive={oneValue === currentValue}>
             <HiddenRadio
               type="radio"
               name={props.groupKey}

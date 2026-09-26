@@ -1,5 +1,3 @@
-import "emoji-mart/css/emoji-mart.css";
-
 import { ChromePicker, SwatchesPicker } from "react-color";
 import React, { useState } from "react";
 
