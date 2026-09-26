@@ -23,13 +23,13 @@ const TextareaTag = styled.textarea`
   height: 100%;
   font-size: 16px;
   min-height: ${(props) =>
-    props.big
+    props.$big
       ? "400px"
-      : props.medium
+      : props.$medium
       ? "200px"
-      : props.small
+      : props.$small
       ? "100px"
-      : props.smallest
+      : props.$smallest
       ? "30px"
       : "auto"};
   border-radius: ${settings.BORDER_RADIUS};
@@ -67,6 +67,18 @@ const ResetLink = styled.a`
 `;
 
 export default function Textarea(props) {
+  const {
+    label,
+    wrapperClassName,
+    hasClipboardButton,
+    compactClipboardButton,
+    notHasResetButton,
+    big,
+    medium,
+    small,
+    smallest,
+    ...textareaProps
+  } = props;
   const onClipboardButtonClick = (event) => {
     const currentFinalValue = props.value ? props.value : props.defaultValue;
     if (currentFinalValue) {
@@ -95,7 +107,13 @@ export default function Textarea(props) {
       <ToastContainer autoClose={1000} closeOnClick />
       {props.label ? <LabelTag>{props.label}:</LabelTag> : ""}
       <TextareaInnerWrapper>
-        <TextareaTag {...props}></TextareaTag>
+        <TextareaTag
+          $big={big}
+          $medium={medium}
+          $small={small}
+          $smallest={smallest}
+          {...textareaProps}
+        ></TextareaTag>
         {props.hasClipboardButton ? (
           <ClipboardButtonWrap
             style={{ opacity: props.value || props.defaultValue ? 1 : 0 }}

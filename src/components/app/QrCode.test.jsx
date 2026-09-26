@@ -49,7 +49,7 @@ test("renders empty state, then canvas and svg, then recovers from overflow", ()
   expect(lastSvg()).not.toBeNull();
 
   // overflow shows a message instead of blowing up, then recovers
-  const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   typeInto("x".repeat(5000));
   expect(screen.getByText(/Too much data for one QR code/)).toBeInTheDocument();
   expect(screen.queryByText("Download SVG")).toBeNull();

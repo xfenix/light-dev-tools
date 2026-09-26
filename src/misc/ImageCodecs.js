@@ -17,8 +17,20 @@ const SVG_FALLBACK_SIZE = 1024;
 const ICO_MAX_SIDE = 256;
 const TEXT_DECODER_LIMIT = 256;
 
-export const INPUT_FILE_ACCEPT =
-  "image/*,.heic,.heif,.heifs,.avif,.tif,.tiff,.bmp,.ico,.svg,.jxl";
+export const INPUT_FILE_ACCEPT = {
+  "image/*": [
+    ".heic",
+    ".heif",
+    ".heifs",
+    ".avif",
+    ".tif",
+    ".tiff",
+    ".bmp",
+    ".ico",
+    ".svg",
+    ".jxl",
+  ],
+};
 
 // Every format the tool is able to read, the browser is asked first and the
 // rest is handled by the decoders below

@@ -1,11 +1,10 @@
-import "emoji-mart/css/emoji-mart.css";
-
 import React, { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 
-import { Picker } from "emoji-mart/dist-modern/index";
+import Picker from "@emoji-mart/react";
 import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
+import emojiData from "@emoji-mart/data";
 
 const FlexWrap = styled.div`
   display: grid;
@@ -58,7 +57,7 @@ export default function EmojiComponent() {
       </TextBlock>
       <FlexWrap>
         <OneFlexColumn>
-          <Picker native={true} onSelect={addEmoji} title="Pick emoji" />
+          <Picker data={emojiData} onEmojiSelect={addEmoji} />
         </OneFlexColumn>
         <OneFlexColumn>
           <Textarea

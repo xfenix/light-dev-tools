@@ -15,10 +15,10 @@ const InnerButton = styled.button`
   border: none;
   outline: none;
   transition: opacity 0.2s;
-  ${(props) => (props.small ? "font-size: 70%;" : "")}
-  ${(props) => (props.transparent ? "opacity: 0.6;" : "")}
+  ${(props) => (props.$small ? "font-size: 70%;" : "")}
+  ${(props) => (props.$transparent ? "opacity: 0.6;" : "")}
   ${(props) =>
-    props.ghost
+    props.$ghost
       ? `
     background: ${settings.WHITE_COLOR};
     border: 2px solid ${settings.LIGHT_GREY_COLOR};
@@ -32,10 +32,17 @@ const InnerButton = styled.button`
       : ""}
 
   &:hover {
-    ${(props) => (props.transparent ? "opacity: 1;" : "")};
+    ${(props) => (props.$transparent ? "opacity: 1;" : "")};
   }
 `;
 
-export default function Button(props) {
-  return <InnerButton {...props}>{props.children}</InnerButton>;
+export default function Button({ small, transparent, ghost, ...props }) {
+  return (
+    <InnerButton
+      $small={small}
+      $transparent={transparent}
+      $ghost={ghost}
+      {...props}
+    />
+  );
 }
