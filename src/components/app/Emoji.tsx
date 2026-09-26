@@ -6,6 +6,11 @@ import TextBlock from "../generic/TextBlockBefore";
 import Textarea from "../generic/Textarea";
 import emojiData from "@emoji-mart/data";
 
+// The picker typings are plain any, this is the only part of the object used
+interface PickedEmoji {
+  native: string;
+}
+
 const FlexWrap = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -38,11 +43,13 @@ const OverrideStylesForTextarea = createGlobalStyle`
 export default function EmojiComponent() {
   const [currentEmojiFieldValue, setCurrentEmoji] = useState("");
 
-  const addEmoji = (emojiObject) => {
+  const addEmoji = (emojiObject: PickedEmoji) => {
     setCurrentEmoji(currentEmojiFieldValue + emojiObject.native);
   };
 
-  const onChangeCurrentEmoji = (event) => {
+  const onChangeCurrentEmoji = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
     setCurrentEmoji(event.target.value);
   };
 

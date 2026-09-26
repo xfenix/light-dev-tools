@@ -41,7 +41,7 @@ const CornerLink = styled.a`
 `;
 
 // The classic "fork me on github" corner with the waving octocat
-export default function GithubCorner({ repo }) {
+export default function GithubCorner({ repo }: { repo: string }) {
   return (
     <CornerLink href={repo} aria-label="Fork me on GitHub">
       <svg

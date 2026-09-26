@@ -11,7 +11,7 @@ const Header = styled.h4`
   margin-bottom: 10px;
 `;
 
-export default function TextBlockBefore(props) {
+export default function TextBlockBefore(props: { children?: React.ReactNode }) {
   return (
     <InnerTextBlock className="typo">
       <Header>Description</Header>

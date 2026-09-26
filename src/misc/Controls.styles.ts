@@ -10,7 +10,7 @@ import styled from "styled-components";
 // somewhere around here anyway
 export const NARROW_SCREEN = "760px";
 
-export const ToolGrid = styled.div`
+export const ToolGrid = styled.div<{ columns?: string }>`
   display: grid;
   grid-template-columns: ${(props) =>
     props.columns ? props.columns : "minmax(0, 1fr) minmax(0, 1fr)"};
@@ -126,7 +126,7 @@ export const SelectInput = styled.select`
   }
 `;
 
-export const CheckLabel = styled.label`
+export const CheckLabel = styled.label<{ isDisabled?: boolean }>`
   display: flex;
   align-items: flex-start;
   cursor: ${(props) => (props.isDisabled ? "default" : "pointer")};

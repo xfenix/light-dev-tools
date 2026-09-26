@@ -3,7 +3,17 @@ import * as settings from "../../misc/Settings";
 import React from "react";
 import styled from "styled-components";
 
-const InnerButton = styled.button`
+interface ButtonLookProps {
+  small?: boolean;
+  transparent?: boolean;
+  ghost?: boolean;
+}
+
+const InnerButton = styled.button<{
+  $small?: boolean;
+  $transparent?: boolean;
+  $ghost?: boolean;
+}>`
   border-radius: ${settings.BORDER_RADIUS};
   padding: 10px 20px;
   margin: 0;
@@ -36,7 +46,15 @@ const InnerButton = styled.button`
   }
 `;
 
-export default function Button({ small, transparent, ghost, ...props }) {
+type ButtonProps = ButtonLookProps &
+  React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+export default function Button({
+  small,
+  transparent,
+  ghost,
+  ...props
+}: ButtonProps) {
   return (
     <InnerButton
       $small={small}

@@ -1,4 +1,4 @@
-import { ChromePicker, SwatchesPicker } from "react-color";
+import { ChromePicker, ColorResult, SwatchesPicker } from "react-color";
 import React, { useState } from "react";
 
 import TextBlock from "../generic/TextBlockBefore";
@@ -46,9 +46,9 @@ const PickersBox = styled.div`
 `;
 
 export default function ColorComponent() {
-  const [currentColor, setCurrentColor] = useState({});
+  const [currentColor, setCurrentColor] = useState<Partial<ColorResult>>({});
 
-  const onChangeColor = (colorObject) => {
+  const onChangeColor = (colorObject: ColorResult) => {
     setCurrentColor(colorObject);
   };
 

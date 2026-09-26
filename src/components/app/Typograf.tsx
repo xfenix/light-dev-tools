@@ -9,7 +9,7 @@ export default function TypografComponent() {
   const [outputValue, setCurrentOutputValue] = useState("");
   const typografActor = new Typograf({ locale: ["ru", "en-US"] });
 
-  const onChangeInputText = (event) => {
+  const onChangeInputText = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCurrentInputValue(event.target.value);
     setCurrentOutputValue(typografActor.execute(event.target.value));
   };

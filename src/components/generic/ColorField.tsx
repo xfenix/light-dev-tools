@@ -76,7 +76,7 @@ const PickerBox = styled.div`
   }
 `;
 
-export function expandHexValue(someValue) {
+export function expandHexValue(someValue: unknown): string {
   const cleanValue = String(someValue).trim().replace("#", "").toLowerCase();
   if (!/^[0-9a-f]+$/.test(cleanValue)) {
     return "";
@@ -87,7 +87,15 @@ export function expandHexValue(someValue) {
   return cleanValue.length === SHORT_HEX_LENGTH * 2 ? `#${cleanValue}` : "";
 }
 
-export default function ColorField(props) {
+interface ColorFieldProps {
+  label: string;
+  value: string;
+  isOpen: boolean;
+  onToggle: (isOpen: boolean) => void;
+  onChange: (hexValue: string) => void;
+}
+
+export default function ColorField(props: ColorFieldProps) {
   const [draftValue, setDraftValue] = useState(props.value);
 
   useEffect(() => {
@@ -98,7 +106,7 @@ export default function ColorField(props) {
     if (!props.isOpen) {
       return undefined;
     }
-    const onKeyDown = (someEvent) => {
+    const onKeyDown = (someEvent: KeyboardEvent) => {
       if (someEvent.key === "Escape") {
         props.onToggle(false);
       }
@@ -107,7 +115,7 @@ export default function ColorField(props) {
     return () => document.removeEventListener("keydown", onKeyDown);
   });
 
-  const onHexChange = (someEvent) => {
+  const onHexChange = (someEvent: React.ChangeEvent<HTMLInputElement>) => {
     const nextValue = someEvent.target.value;
     setDraftValue(nextValue);
     const fullValue = expandHexValue(nextValue);

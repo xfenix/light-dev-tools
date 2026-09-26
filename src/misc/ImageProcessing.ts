@@ -1,11 +1,54 @@
 // Geometry and resampling math for the image tool. Everything here is free of
 // dom apis on purpose: the same code runs in the browser and in the tests
 
-export const RESIZE_MODES = [
+export type ResizeMode = "fit" | "cover" | "stretch";
+export const RESIZE_MODES: ReadonlyArray<{ key: ResizeMode; title: string }> = [
   { key: "fit", title: "Fit into the box" },
   { key: "cover", title: "Cover the box" },
   { key: "stretch", title: "Exact size" },
 ];
+
+// Rgba bytes, four per pixel, exactly what the canvas image data holds
+export type PixelBytes = ArrayLike<number>;
+
+export interface CropRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface RgbValue {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+export interface PixelsStep {
+  pixels: PixelBytes;
+  width: number;
+  height: number;
+}
+
+export interface ResampleOptions {
+  lobes?: number;
+  gammaCorrect?: boolean;
+}
+
+export interface ResizePlanOptions {
+  sourceWidth: number;
+  sourceHeight: number;
+  boxWidth?: number;
+  boxHeight?: number;
+  mode?: ResizeMode;
+  allowUpscale?: boolean;
+}
+
+export interface ResizePlan {
+  width: number;
+  height: number;
+  cropRect: CropRect;
+}
 const LANCZOS_LOBES = 3;
 // Canvas itself gives up somewhere around 16k on a side and every megapixel
 // costs four megabytes of memory, so the sizes are bounded before anything is
@@ -19,13 +62,13 @@ const BYTE_SIZES = ["B", "KB", "MB", "GB"];
 const SRGB_TO_LINEAR = buildSrgbToLinearTable();
 const LINEAR_TO_SRGB = buildLinearToSrgbTable();
 
-function srgbToLinear(channelValue) {
+function srgbToLinear(channelValue: number) {
   return channelValue <= 0.04045
     ? channelValue / 12.92
     : Math.pow((channelValue + 0.055) / 1.055, 2.4);
 }
 
-function linearToSrgb(channelValue) {
+function linearToSrgb(channelValue: number) {
   return channelValue <= 0.0031308
     ? channelValue * 12.92
     : 1.055 * Math.pow(channelValue, 1 / 2.4) - 0.055;
@@ -51,7 +94,7 @@ function buildLinearToSrgbTable() {
 
 // The classic windowed sinc, it keeps the most detail on downscale without the
 // ringing of the wider windows
-function lanczosWeight(pointValue, lobesCount) {
+function lanczosWeight(pointValue: number, lobesCount: number) {
   if (pointValue === 0) {
     return 1;
   }
@@ -67,8 +110,8 @@ function lanczosWeight(pointValue, lobesCount) {
 
 // Precomputed filter taps for one axis, shared by every row (or column)
 export function buildFilterWeights(
-  sourceSize,
-  targetSize,
+  sourceSize: number,
+  targetSize: number,
   lobesCount = LANCZOS_LOBES
 ) {
   const axisScale = targetSize / sourceSize;
@@ -114,12 +157,12 @@ export function buildFilterWeights(
 // works on premultiplied linear light values, so neither the transparent edges
 // nor the overall brightness shift around
 export function resamplePixels(
-  sourcePixels,
-  sourceWidth,
-  sourceHeight,
-  targetWidth,
-  targetHeight,
-  options = {}
+  sourcePixels: PixelBytes,
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+  options: ResampleOptions = {}
 ) {
   const lobesCount = options.lobes || LANCZOS_LOBES;
   const isGammaAware = options.gammaCorrect !== false;
@@ -213,11 +256,11 @@ export function resamplePixels(
   return targetPixels;
 }
 
-function toLinear(byteValue, isGammaAware) {
+function toLinear(byteValue: number, isGammaAware: boolean) {
   return isGammaAware ? SRGB_TO_LINEAR[byteValue] : byteValue / 255;
 }
 
-function fromLinear(linearValue, isGammaAware) {
+function fromLinear(linearValue: number, isGammaAware: boolean) {
   const clampedValue = Math.min(1, Math.max(0, linearValue));
   if (!isGammaAware) {
     return Math.round(clampedValue * 255);
@@ -227,7 +270,11 @@ function fromLinear(linearValue, isGammaAware) {
 
 // Cuts the rectangle out of the rgba buffer, the rectangle is expected to be
 // already clamped by normalizeCropRect
-export function cropPixels(sourcePixels, sourceWidth, cropRect) {
+export function cropPixels(
+  sourcePixels: Uint8ClampedArray,
+  sourceWidth: number,
+  cropRect: CropRect
+) {
   const targetPixels = new Uint8ClampedArray(
     cropRect.width * cropRect.height * 4
   );
@@ -243,7 +290,11 @@ export function cropPixels(sourcePixels, sourceWidth, cropRect) {
 }
 
 // Keeps the selection inside the image and never lets it collapse to nothing
-export function normalizeCropRect(cropRect, sourceWidth, sourceHeight) {
+export function normalizeCropRect(
+  cropRect: Partial<CropRect> | null | undefined,
+  sourceWidth: number,
+  sourceHeight: number
+): CropRect {
   const safeRect = cropRect || {};
   const left = clampNumber(Math.round(safeRect.left || 0), 0, sourceWidth - 1);
   const top = clampNumber(Math.round(safeRect.top || 0), 0, sourceHeight - 1);
@@ -260,7 +311,11 @@ export function normalizeCropRect(cropRect, sourceWidth, sourceHeight) {
   return { left, top, width, height };
 }
 
-export function clampNumber(someValue, minValue, maxValue) {
+export function clampNumber(
+  someValue: number,
+  minValue: number,
+  maxValue: number
+) {
   if (!isFinite(someValue)) {
     return minValue;
   }
@@ -269,7 +324,7 @@ export function clampNumber(someValue, minValue, maxValue) {
 
 // Turns the box asked by the user into the real output size plus the piece of
 // the source it has to be taken from
-export function computeResizePlan(options) {
+export function computeResizePlan(options: ResizePlanOptions): ResizePlan {
   const sourceWidth = options.sourceWidth;
   const sourceHeight = options.sourceHeight;
   const fullRect = {
@@ -321,7 +376,7 @@ export function computeResizePlan(options) {
     };
   }
   const ratioCandidates = [widthRatio, heightRatio].filter(
-    (oneRatio) => oneRatio !== null
+    (oneRatio): oneRatio is number => oneRatio !== null
   );
   const fitScale = limitScale(
     Math.min.apply(null, ratioCandidates),
@@ -334,13 +389,13 @@ export function computeResizePlan(options) {
   };
 }
 
-function limitScale(scaleValue, allowUpscale) {
+function limitScale(scaleValue: number, allowUpscale?: boolean) {
   return allowUpscale ? scaleValue : Math.min(1, scaleValue);
 }
 
 // Returns an empty string for the sizes the browser can really handle and a
 // human readable complaint for the rest
-export function describeSizeProblem(imageWidth, imageHeight) {
+export function describeSizeProblem(imageWidth: number, imageHeight: number) {
   if (
     !isFinite(imageWidth) ||
     !isFinite(imageHeight) ||
@@ -364,7 +419,7 @@ export function describeSizeProblem(imageWidth, imageHeight) {
   return "";
 }
 
-export function formatByteSize(bytesCount) {
+export function formatByteSize(bytesCount: number) {
   let restValue = bytesCount;
   let unitIndex = 0;
   while (restValue >= 1024 && unitIndex < BYTE_SIZES.length - 1) {
@@ -378,11 +433,11 @@ export function formatByteSize(bytesCount) {
 // Averaging 2x2 blocks is both exact and cheap, so a huge photo is brought
 // close to the target size this way before the expensive filter kicks in
 export function halvePixels(
-  sourcePixels,
-  sourceWidth,
-  sourceHeight,
-  isGammaAware
-) {
+  sourcePixels: PixelBytes,
+  sourceWidth: number,
+  sourceHeight: number,
+  isGammaAware: boolean
+): PixelsStep {
   const targetWidth = sourceWidth / 2;
   const targetHeight = sourceHeight / 2;
   const targetPixels = new Uint8ClampedArray(targetWidth * targetHeight * 4);
@@ -434,14 +489,14 @@ export function halvePixels(
 // Halving is exact only while both sides are even, an odd side simply stops
 // the chain and leaves the rest of the work to the filter
 export function reducePixelsByHalves(
-  sourcePixels,
-  sourceWidth,
-  sourceHeight,
-  targetWidth,
-  targetHeight,
-  isGammaAware
-) {
-  let currentStep = {
+  sourcePixels: PixelBytes,
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+  isGammaAware: boolean
+): PixelsStep {
+  let currentStep: PixelsStep = {
     pixels: sourcePixels,
     width: sourceWidth,
     height: sourceHeight,
@@ -464,7 +519,10 @@ export function reducePixelsByHalves(
 
 // Lays the image over an opaque color, needed by the formats without an alpha
 // channel and by anybody who wants a solid background
-export function flattenPixels(sourcePixels, backgroundColor) {
+export function flattenPixels(
+  sourcePixels: PixelBytes,
+  backgroundColor: RgbValue
+) {
   const targetPixels = new Uint8ClampedArray(sourcePixels.length);
   const backRed = backgroundColor.red;
   const backGreen = backgroundColor.green;
@@ -490,7 +548,7 @@ export function flattenPixels(sourcePixels, backgroundColor) {
   return targetPixels;
 }
 
-export function hasTransparentPixels(sourcePixels) {
+export function hasTransparentPixels(sourcePixels: PixelBytes) {
   for (
     let pixelOffset = 3;
     pixelOffset < sourcePixels.length;
@@ -503,7 +561,7 @@ export function hasTransparentPixels(sourcePixels) {
   return false;
 }
 
-export function parseHexColor(hexValue) {
+export function parseHexColor(hexValue: string | null | undefined): RgbValue {
   const cleanValue = String(hexValue || "").replace("#", "");
   const fullValue =
     cleanValue.length === 3

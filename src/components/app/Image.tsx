@@ -17,7 +17,18 @@ import {
   ToolGrid,
 } from "../../misc/Controls.styles";
 import {
+  CropRect,
+  RESIZE_MODES,
+  ResizeMode,
+  clampNumber,
+  computeResizePlan,
+  formatByteSize,
+  normalizeCropRect,
+  parseHexColor,
+} from "../../misc/ImageProcessing";
+import {
   INPUT_FILE_ACCEPT,
+  SourceImage,
   buildOutputFileName,
   decodeImageFile,
   detectSupportedOutputFormats,
@@ -33,14 +44,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  RESIZE_MODES,
-  clampNumber,
-  computeResizePlan,
-  formatByteSize,
-  normalizeCropRect,
-  parseHexColor,
-} from "../../misc/ImageProcessing";
 import { ToastContainer, toast } from "react-toastify";
 
 import Button from "../generic/Button";
@@ -50,7 +53,11 @@ import { useDropzone } from "react-dropzone";
 
 const PREVIEW_MAX_SIDE = 460;
 const RENDER_DELAY = 250;
-const ASPECT_PRESETS = [
+const ASPECT_PRESETS: ReadonlyArray<{
+  key: string;
+  title: string;
+  ratio: number | null;
+}> = [
   { key: "free", title: "Free", ratio: null },
   { key: "1:1", title: "1:1", ratio: 1 },
   { key: "4:3", title: "4:3", ratio: 4 / 3 },
@@ -61,8 +68,9 @@ const SCALE_PRESETS = [100, 75, 50, 33, 25];
 // How close to an edge of the selection the pointer has to be to grab it,
 // measured on the screen and converted to the pixels of the image later
 const HANDLE_GRAB_SIZE = 14;
-const CROP_HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
-const HANDLE_CURSORS = {
+const CROP_HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const;
+type CropHandleKey = (typeof CROP_HANDLES)[number];
+const HANDLE_CURSORS: Record<CropHandleKey, string> = {
   nw: "nwse-resize",
   se: "nwse-resize",
   ne: "nesw-resize",
@@ -72,7 +80,7 @@ const HANDLE_CURSORS = {
   e: "ew-resize",
   w: "ew-resize",
 };
-const HANDLE_OFFSETS = {
+const HANDLE_OFFSETS: Record<CropHandleKey, React.CSSProperties> = {
   nw: { left: "0%", top: "0%" },
   n: { left: "50%", top: "0%" },
   ne: { left: "100%", top: "0%" },
@@ -91,7 +99,32 @@ const CHECKER_BACKGROUND = `
   linear-gradient(-45deg, transparent 75%, ${settings.LIGHT_GREY_COLOR} 75%)
 `;
 
-const DropBox = styled.div`
+interface CropPoint {
+  left: number;
+  top: number;
+}
+
+interface DragState {
+  startPoint: CropPoint;
+  startRect: CropRect;
+  handleKey: CropHandleKey | "";
+  isMoving: boolean;
+}
+
+interface ResultData {
+  blob: Blob;
+  url: string;
+  width: number;
+  height: number;
+  fileName: string;
+  formatTitle: string;
+}
+
+function describeError(someError: unknown) {
+  return someError instanceof Error ? someError.message : String(someError);
+}
+
+const DropBox = styled.div<{ $isActive: boolean }>`
   border: 2px dashed
     ${(props) =>
       props.$isActive ? settings.BLACK_COLOR : settings.LIGHT_GREY_COLOR};
@@ -175,7 +208,7 @@ const FormatsBox = styled.div`
   flex-wrap: wrap;
   gap: 8px;
 `;
-const FormatButton = styled.button`
+const FormatButton = styled.button<{ $isActive: boolean }>`
   padding: 7px 14px;
   border-radius: ${settings.BORDER_RADIUS};
   border: 2px solid
@@ -213,7 +246,7 @@ const ColorInput = styled.input`
   background: ${settings.WHITE_COLOR};
   cursor: pointer;
 `;
-const ResultFrame = styled.div`
+const ResultFrame = styled.div<{ $isBusy: boolean }>`
   display: inline-block;
   max-width: 100%;
   line-height: 0;
@@ -242,7 +275,7 @@ const ResultFacts = styled.dl`
     color: ${settings.GREY_COLOR};
   }
 `;
-const DeltaText = styled.span`
+const DeltaText = styled.span<{ $isSmaller: boolean }>`
   color: ${(props) =>
     props.$isSmaller ? settings.BLACK_COLOR : settings.RED_COLOR};
 `;
@@ -268,7 +301,7 @@ const BusyMark = styled.span`
   letter-spacing: 0;
 `;
 
-function saveBlob(someBlob, fileName) {
+function saveBlob(someBlob: Blob, fileName: string) {
   const objectUrl = URL.createObjectURL(someBlob);
   const linkElement = document.createElement("a");
   linkElement.href = objectUrl;
@@ -282,11 +315,11 @@ function saveBlob(someBlob, fileName) {
 // Both the drawn selection and the numeric fields end up here, ratio is kept
 // by moving the bottom right corner only
 export function applyAspectRatio(
-  cropRect,
-  aspectRatio,
-  sourceWidth,
-  sourceHeight
-) {
+  cropRect: Partial<CropRect> | null,
+  aspectRatio: number | null,
+  sourceWidth: number,
+  sourceHeight: number
+): CropRect {
   if (!aspectRatio) {
     return normalizeCropRect(cropRect, sourceWidth, sourceHeight);
   }
@@ -315,7 +348,12 @@ export function applyAspectRatio(
 
 // A selection can be a couple of pixels wide, and then both of its edges are
 // under the pointer at once, so the closer one takes the drag
-function pickNearerEdge(pointValue, firstEdge, secondEdge, grabDistance) {
+function pickNearerEdge(
+  pointValue: number,
+  firstEdge: number,
+  secondEdge: number,
+  grabDistance: number
+) {
   const firstDistance = Math.abs(pointValue - firstEdge);
   const secondDistance = Math.abs(pointValue - secondEdge);
   if (firstDistance > grabDistance && secondDistance > grabDistance) {
@@ -332,7 +370,11 @@ function pickNearerEdge(pointValue, firstEdge, secondEdge, grabDistance) {
 
 // A corner wins over an edge, otherwise the tiny overlap between the two makes
 // the corners almost impossible to catch
-export function findCropHandle(somePoint, cropRect, grabDistance) {
+export function findCropHandle(
+  somePoint: CropPoint,
+  cropRect: CropRect,
+  grabDistance: number
+): CropHandleKey | "" {
   const insideRows =
     somePoint.top >= cropRect.top - grabDistance &&
     somePoint.top <= cropRect.top + cropRect.height + grabDistance;
@@ -358,19 +400,19 @@ export function findCropHandle(somePoint, cropRect, grabDistance) {
     verticalSide === -1 ? "n" : verticalSide === 1 ? "s" : "";
   const horizontalPart =
     horizontalSide === -1 ? "w" : horizontalSide === 1 ? "e" : "";
-  return `${verticalPart}${horizontalPart}`;
+  return `${verticalPart}${horizontalPart}` as CropHandleKey | "";
 }
 
 // The ratio has to be kept without moving the edge the pointer is not holding:
 // dragging the bottom of a locked selection has to grow it downwards only, and
 // the side being dragged is the one that decides the new size
 export function applyAspectToHandle(
-  cropRect,
-  handleKey,
-  aspectRatio,
-  sourceWidth,
-  sourceHeight
-) {
+  cropRect: CropRect,
+  handleKey: string,
+  aspectRatio: number | null,
+  sourceWidth: number,
+  sourceHeight: number
+): CropRect {
   if (!aspectRatio) {
     return normalizeCropRect(cropRect, sourceWidth, sourceHeight);
   }
@@ -394,8 +436,8 @@ export function applyAspectToHandle(
     roomWidth / wantedWidth,
     roomHeight / wantedHeight
   );
-  let nextWidth;
-  let nextHeight;
+  let nextWidth: number;
+  let nextHeight: number;
   if (isVertical) {
     nextHeight = Math.max(1, Math.round(wantedHeight * sizeScale));
     nextWidth = Math.max(1, Math.round(nextHeight * aspectRatio));
@@ -420,7 +462,11 @@ export function applyAspectToHandle(
 
 // Dragging a handle moves its own side only, the opposite one stays where the
 // user put it
-export function resizeCropRect(startRect, handleKey, somePoint) {
+export function resizeCropRect(
+  startRect: CropRect,
+  handleKey: string,
+  somePoint: CropPoint
+): CropRect {
   let leftEdge = startRect.left;
   let topEdge = startRect.top;
   let rightEdge = startRect.left + startRect.width;
@@ -446,7 +492,7 @@ export function resizeCropRect(startRect, handleKey, somePoint) {
 }
 
 export default function ImageComponent() {
-  const [sourceImage, setSourceImage] = useState(null);
+  const [sourceImage, setSourceImage] = useState<SourceImage | null>(null);
   const [isBusy, setBusy] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [formatKey, setFormatKey] = useState("png");
@@ -454,20 +500,20 @@ export default function ImageComponent() {
   const [isDithered, setDithered] = useState(true);
   const [backgroundColor, setBackgroundColor] = useState(settings.WHITE_COLOR);
   const [isFlattened, setFlattened] = useState(false);
-  const [resizeMode, setResizeMode] = useState(RESIZE_MODES[0].key);
+  const [resizeMode, setResizeMode] = useState<ResizeMode>(RESIZE_MODES[0].key);
   const [allowUpscale, setAllowUpscale] = useState(false);
   const [sizeInputs, setSizeInputs] = useState({ width: "", height: "" });
   const [isSizeTouched, setSizeTouched] = useState(false);
-  const [cropRect, setCropRect] = useState(null);
+  const [cropRect, setCropRect] = useState<CropRect | null>(null);
   const [aspectKey, setAspectKey] = useState("free");
   const [cropCursor, setCropCursor] = useState("crosshair");
-  const [resultData, setResultData] = useState(null);
-  const previewCanvas = useRef(null);
-  const cropBoxElement = useRef(null);
-  const dragState = useRef(null);
+  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const previewCanvas = useRef<HTMLCanvasElement>(null);
+  const cropBoxElement = useRef<HTMLDivElement>(null);
+  const dragState = useRef<DragState | null>(null);
   const resultUrl = useRef("");
   const dropCounter = useRef(0);
-  const liveSource = useRef(null);
+  const liveSource = useRef<SourceImage | null>(null);
 
   const supportedFormats = useMemo(() => detectSupportedOutputFormats(), []);
   const currentFormat = findOutputFormat(formatKey);
@@ -485,7 +531,7 @@ export default function ImageComponent() {
 
   // Decoding is asynchronous and a second file can be dropped while the first
   // one is still being read, so only the last drop is allowed to win
-  const onDrop = useCallback(async (acceptedFiles) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const oneFile = acceptedFiles[0];
     if (!oneFile) {
       return;
@@ -528,7 +574,9 @@ export default function ImageComponent() {
       setSourceImage(null);
       setResultData(null);
       setErrorText(
-        `${someError.message}. Try another file or convert it to png first.`
+        `${describeError(
+          someError
+        )}. Try another file or convert it to png first.`
       );
     }
     if (dropNumber === dropCounter.current) {
@@ -575,6 +623,9 @@ export default function ImageComponent() {
     targetCanvas.width = previewWidth;
     targetCanvas.height = previewHeight;
     const drawContext = targetCanvas.getContext("2d");
+    if (!drawContext) {
+      return;
+    }
     drawContext.imageSmoothingEnabled = true;
     drawContext.imageSmoothingQuality = "high";
     drawContext.clearRect(0, 0, previewWidth, previewHeight);
@@ -667,7 +718,7 @@ export default function ImageComponent() {
       } catch (someError) {
         if (!isDropped) {
           setResultData(null);
-          setErrorText(someError.message);
+          setErrorText(describeError(someError));
         }
       }
       if (!isDropped) {
@@ -702,51 +753,59 @@ export default function ImageComponent() {
 
   // The canvas is free to shrink with the column around it, so the pixels are
   // always measured against its real rendered size
-  const pointFromEvent = (someEvent) => {
-    const canvasRect = previewCanvas.current.getBoundingClientRect();
+  const pointFromEvent = (
+    someEvent: React.PointerEvent,
+    canvasNode: HTMLCanvasElement,
+    activeImage: SourceImage
+  ): CropPoint => {
+    const canvasRect = canvasNode.getBoundingClientRect();
     const widthScale = canvasRect.width
-      ? canvasRect.width / sourceImage.width
+      ? canvasRect.width / activeImage.width
       : 1;
     const heightScale = canvasRect.height
-      ? canvasRect.height / sourceImage.height
+      ? canvasRect.height / activeImage.height
       : 1;
     return {
       left: clampNumber(
         Math.round((someEvent.clientX - canvasRect.left) / widthScale),
         0,
-        sourceImage.width
+        activeImage.width
       ),
       top: clampNumber(
         Math.round((someEvent.clientY - canvasRect.top) / heightScale),
         0,
-        sourceImage.height
+        activeImage.height
       ),
     };
   };
 
-  const grabDistanceInPixels = () => {
-    const canvasRect = previewCanvas.current.getBoundingClientRect();
+  const grabDistanceInPixels = (
+    canvasNode: HTMLCanvasElement,
+    activeImage: SourceImage
+  ) => {
+    const canvasRect = canvasNode.getBoundingClientRect();
     const renderedScale = canvasRect.width
-      ? canvasRect.width / sourceImage.width
+      ? canvasRect.width / activeImage.width
       : 1;
     return HANDLE_GRAB_SIZE / Math.max(renderedScale, 0.0001);
   };
 
-  const isInsideCrop = (somePoint) =>
-    somePoint.left >= safeCropRect.left &&
-    somePoint.left <= safeCropRect.left + safeCropRect.width &&
-    somePoint.top >= safeCropRect.top &&
-    somePoint.top <= safeCropRect.top + safeCropRect.height;
+  const isInsideCrop = (somePoint: CropPoint, someRect: CropRect) =>
+    somePoint.left >= someRect.left &&
+    somePoint.left <= someRect.left + someRect.width &&
+    somePoint.top >= someRect.top &&
+    somePoint.top <= someRect.top + someRect.height;
 
-  const onCropPointerDown = (someEvent) => {
-    if (!sourceImage) {
+  const onCropPointerDown = (someEvent: React.PointerEvent) => {
+    const canvasNode = previewCanvas.current;
+    if (!sourceImage || !safeCropRect || !canvasNode) {
       return;
     }
-    const startPoint = pointFromEvent(someEvent);
+    const startPoint = pointFromEvent(someEvent, canvasNode, sourceImage);
     const handleKey = findCropHandle(
       startPoint,
       safeCropRect,
-      grabDistanceInPixels()
+      grabDistanceInPixels(canvasNode, sourceImage)
     );
     // While the whole image is selected there is nothing to move around, so a
     // drag away from the handles starts a new selection instead
@@ -757,7 +816,8 @@ export default function ImageComponent() {
       startPoint,
       startRect: safeCropRect,
       handleKey,
-      isMoving: !handleKey && !isWholeImage && isInsideCrop(startPoint),
+      isMoving:
+        !handleKey && !isWholeImage && isInsideCrop(startPoint, safeCropRect),
     };
     if (
       someEvent.currentTarget.setPointerCapture &&
@@ -767,21 +827,22 @@ export default function ImageComponent() {
     }
   };
 
-  const onCropPointerMove = (someEvent) => {
-    if (!sourceImage) {
+  const onCropPointerMove = (someEvent: React.PointerEvent) => {
+    const canvasNode = previewCanvas.current;
+    if (!sourceImage || !safeCropRect || !canvasNode) {
       return;
     }
-    const currentPoint = pointFromEvent(someEvent);
+    const currentPoint = pointFromEvent(someEvent, canvasNode, sourceImage);
     const dragInfo = dragState.current;
     if (!dragInfo) {
       const hoverHandle = findCropHandle(
         currentPoint,
         safeCropRect,
-        grabDistanceInPixels()
+        grabDistanceInPixels(canvasNode, sourceImage)
       );
       const nextCursor = hoverHandle
         ? HANDLE_CURSORS[hoverHandle]
-        : isInsideCrop(currentPoint)
+        : isInsideCrop(currentPoint, safeCropRect)
         ? "move"
         : "crosshair";
       if (nextCursor !== cropCursor) {
@@ -843,21 +904,26 @@ export default function ImageComponent() {
     dragState.current = null;
   };
 
-  const onCropNumberChange = (fieldName) => (someEvent) => {
-    const nextValue = parseInt(someEvent.target.value, 10);
-    setCropRect(
-      applyAspectRatio(
-        Object.assign({}, safeCropRect, {
-          [fieldName]: isNaN(nextValue) ? 1 : nextValue,
-        }),
-        fieldName === "width" || fieldName === "height" ? aspectRatio : null,
-        sourceImage.width,
-        sourceImage.height
-      )
-    );
-  };
+  const onCropNumberChange =
+    (fieldName: keyof CropRect) =>
+    (someEvent: React.ChangeEvent<HTMLInputElement>) => {
+      if (!sourceImage) {
+        return;
+      }
+      const nextValue = parseInt(someEvent.target.value, 10);
+      setCropRect(
+        applyAspectRatio(
+          Object.assign({}, safeCropRect, {
+            [fieldName]: isNaN(nextValue) ? 1 : nextValue,
+          }),
+          fieldName === "width" || fieldName === "height" ? aspectRatio : null,
+          sourceImage.width,
+          sourceImage.height
+        )
+      );
+    };
 
-  const onAspectChange = (someEvent) => {
+  const onAspectChange = (someEvent: React.ChangeEvent<HTMLSelectElement>) => {
     const nextKey = someEvent.target.value;
     setAspectKey(nextKey);
     const nextRatio = (
@@ -876,14 +942,19 @@ export default function ImageComponent() {
     }
   };
 
-  const onSizeChange = (fieldName) => (someEvent) => {
-    setSizeTouched(true);
-    setSizeInputs(
-      Object.assign({}, sizeInputs, { [fieldName]: someEvent.target.value })
-    );
-  };
+  const onSizeChange =
+    (fieldName: "width" | "height") =>
+    (someEvent: React.ChangeEvent<HTMLInputElement>) => {
+      setSizeTouched(true);
+      setSizeInputs(
+        Object.assign({}, sizeInputs, { [fieldName]: someEvent.target.value })
+      );
+    };
 
-  const onScalePreset = (percentValue) => () => {
+  const onScalePreset = (percentValue: number) => () => {
+    if (!safeCropRect) {
+      return;
+    }
     setSizeTouched(true);
     setResizeMode("fit");
     setSizeInputs({
@@ -897,6 +968,9 @@ export default function ImageComponent() {
   };
 
   const onResetCrop = () => {
+    if (!sourceImage) {
+      return;
+    }
     setAspectKey("free");
     setCropRect({
       left: 0,
@@ -917,14 +991,15 @@ export default function ImageComponent() {
 
   // Percents instead of pixels, this way the selection stays glued to the
   // picture even when the column squeezes the canvas below its own size
-  const cropWindowStyle = safeCropRect
-    ? {
-        left: `${(safeCropRect.left / sourceImage.width) * 100}%`,
-        top: `${(safeCropRect.top / sourceImage.height) * 100}%`,
-        width: `${(safeCropRect.width / sourceImage.width) * 100}%`,
-        height: `${(safeCropRect.height / sourceImage.height) * 100}%`,
-      }
-    : {};
+  const cropWindowStyle =
+    safeCropRect && sourceImage
+      ? {
+          left: `${(safeCropRect.left / sourceImage.width) * 100}%`,
+          top: `${(safeCropRect.top / sourceImage.height) * 100}%`,
+          width: `${(safeCropRect.width / sourceImage.width) * 100}%`,
+          height: `${(safeCropRect.height / sourceImage.height) * 100}%`,
+        }
+      : {};
   const sizeDelta =
     resultData && sourceImage && sourceImage.fileSize
       ? Math.round((resultData.blob.size / sourceImage.fileSize - 1) * 100)
@@ -980,7 +1055,7 @@ export default function ImageComponent() {
         </DropBox>
       )}
       {errorText ? <ErrorBox>{errorText}</ErrorBox> : ""}
-      {!sourceImage ? (
+      {!sourceImage || !safeCropRect ? (
         <EmptyBox>
           {isBusy ? "Reading the image..." : "No image loaded yet."}
         </EmptyBox>
@@ -1161,7 +1236,7 @@ export default function ImageComponent() {
                     value={resizeMode}
                     aria-label="Resize mode"
                     onChange={(someEvent) =>
-                      setResizeMode(someEvent.target.value)
+                      setResizeMode(someEvent.target.value as ResizeMode)
                     }
                   >
                     {RESIZE_MODES.map((oneMode) => (

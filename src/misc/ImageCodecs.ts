@@ -3,6 +3,10 @@
 // browser gives up, encoding adds the formats canvas knows nothing about
 
 import {
+  CropRect,
+  PixelBytes,
+  PixelsStep,
+  RgbValue,
   cropPixels,
   describeSizeProblem,
   flattenPixels,
@@ -16,6 +20,73 @@ import { encodeGif } from "./GifEncoder";
 const SVG_FALLBACK_SIZE = 1024;
 const ICO_MAX_SIDE = 256;
 const TEXT_DECODER_LIMIT = 256;
+
+type DecoderKind = "browser" | "vector" | "utif" | "heic";
+type WriterKind = "canvas" | "utif" | "bmp" | "gif" | "ico";
+
+export interface InputFormat {
+  key: string;
+  title: string;
+  decoder: DecoderKind;
+}
+
+export interface OutputFormat {
+  key: string;
+  title: string;
+  extension: string;
+  mime: string;
+  writer: WriterKind;
+  isLossless?: boolean;
+  hasQuality?: boolean;
+  hasAlpha: boolean;
+  isPalette?: boolean;
+  maxSide?: number;
+  note: string;
+}
+
+export interface DecodedPixels {
+  pixels: Uint8ClampedArray;
+  width: number;
+  height: number;
+}
+
+interface SourceImageBase extends DecodedPixels {
+  formatKey: string;
+  formatTitle: string;
+  fileName: string;
+  fileSize: number;
+  release: () => void;
+}
+
+export interface RasterSourceImage extends SourceImageBase {
+  isVector: false;
+}
+
+// A vector source keeps the way to draw itself again at any size
+export interface VectorSourceImage extends SourceImageBase {
+  isVector: true;
+  rasterize: (
+    targetWidth: number,
+    targetHeight: number
+  ) => Promise<DecodedPixels>;
+}
+
+export type SourceImage = RasterSourceImage | VectorSourceImage;
+
+export interface RenderPlan {
+  cropRect: CropRect;
+  width: number;
+  height: number;
+  gammaCorrect?: boolean;
+  backgroundColor?: RgbValue | null;
+}
+
+export interface EncodeOptions {
+  quality?: number;
+  dither?: boolean;
+}
+
+type DrawableImage = ImageBitmap | HTMLImageElement;
 
 export const INPUT_FILE_ACCEPT = {
   "image/*": [
@@ -34,7 +105,7 @@ export const INPUT_FILE_ACCEPT = {
 
 // Every format the tool is able to read, the browser is asked first and the
 // rest is handled by the decoders below
-export const INPUT_FORMATS = [
+export const INPUT_FORMATS: ReadonlyArray<InputFormat> = [
   { key: "png", title: "PNG", decoder: "browser" },
   { key: "jpeg", title: "JPEG", decoder: "browser" },
   { key: "webp", title: "WebP", decoder: "browser" },
@@ -49,7 +120,7 @@ export const INPUT_FORMATS = [
   { key: "unknown", title: "Unknown", decoder: "browser" },
 ];
 
-export const OUTPUT_FORMATS = [
+export const OUTPUT_FORMATS: ReadonlyArray<OutputFormat> = [
   {
     key: "png",
     title: "PNG",
@@ -133,7 +204,7 @@ export const OUTPUT_FORMATS = [
   },
 ];
 
-export function findOutputFormat(formatKey) {
+export function findOutputFormat(formatKey: string): OutputFormat {
   return (
     OUTPUT_FORMATS.filter((oneFormat) => oneFormat.key === formatKey)[0] ||
     OUTPUT_FORMATS[0]
@@ -154,42 +225,58 @@ export function detectSupportedOutputFormats() {
           .toDataURL(oneFormat.mime)
           .indexOf(`data:${oneFormat.mime}`) === 0
       );
-    } catch (someError) {
+    } catch {
       return false;
     }
   });
 }
 
-function guardSize(imageWidth, imageHeight) {
+function guardSize(imageWidth: number, imageHeight: number) {
   const sizeProblem = describeSizeProblem(imageWidth, imageHeight);
   if (sizeProblem) {
     throw new Error(sizeProblem);
   }
 }
 
-function createCanvas(canvasWidth, canvasHeight) {
+function createCanvas(canvasWidth: number, canvasHeight: number) {
   const canvasElement = document.createElement("canvas");
   canvasElement.width = canvasWidth;
   canvasElement.height = canvasHeight;
   return canvasElement;
 }
 
-function readFileAsArrayBuffer(someFile) {
+function getDrawContext(canvasElement: HTMLCanvasElement) {
+  const drawContext = canvasElement.getContext("2d");
+  if (!drawContext) {
+    throw new Error("This browser cannot draw on a canvas");
+  }
+  return drawContext;
+}
+
+function readFileAsArrayBuffer(someFile: Blob): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
-    fileReader.onload = () => resolve(fileReader.result);
+    fileReader.onload = () => resolve(fileReader.result as ArrayBuffer);
     fileReader.onerror = () => reject(new Error("Cannot read the file"));
     fileReader.readAsArrayBuffer(someFile);
   });
 }
 
-function startsWithBytes(headBytes, byteValues, atOffset = 0) {
+function startsWithBytes(
+  headBytes: ArrayLike<number>,
+  byteValues: number[],
+  atOffset = 0
+) {
   return byteValues.every(
     (oneByte, byteIndex) => headBytes[atOffset + byteIndex] === oneByte
   );
 }
 
-function bytesToText(headBytes, fromOffset, bytesCount) {
+function bytesToText(
+  headBytes: ArrayLike<number>,
+  fromOffset: number,
+  bytesCount: number
+) {
   let textValue = "";
   for (let byteIndex = 0; byteIndex < bytesCount; byteIndex += 1) {
     textValue += String.fromCharCode(headBytes[fromOffset + byteIndex] || 0);
@@ -198,7 +285,10 @@ function bytesToText(headBytes, fromOffset, bytesCount) {
 }
 
 // The extension lies too often, so the type is taken from the file itself
-export function detectFormatKey(headBytes, fileName = "") {
+export function detectFormatKey(
+  headBytes: ArrayLike<number>,
+  fileName = ""
+): string {
   if (startsWithBytes(headBytes, [137, 80, 78, 71])) {
     return "png";
   }
@@ -246,7 +336,7 @@ export function detectFormatKey(headBytes, fileName = "") {
   const dotIndex = fileName.lastIndexOf(".");
   const extensionName =
     dotIndex === -1 ? "" : fileName.slice(dotIndex + 1).toLowerCase();
-  const knownByExtension = {
+  const knownByExtension: Record<string, string | undefined> = {
     jpg: "jpeg",
     jpeg: "jpeg",
     png: "png",
@@ -265,24 +355,26 @@ export function detectFormatKey(headBytes, fileName = "") {
   return knownByExtension[extensionName] || "unknown";
 }
 
-function findInputFormat(formatKey) {
+function findInputFormat(formatKey: string) {
   return (
     INPUT_FORMATS.filter((oneFormat) => oneFormat.key === formatKey)[0] ||
     INPUT_FORMATS[INPUT_FORMATS.length - 1]
   );
 }
 
-async function decodeWithBrowser(someBlob) {
+async function decodeWithBrowser(someBlob: Blob): Promise<DrawableImage> {
   if (typeof createImageBitmap === "function") {
     try {
       // Phones write the orientation into exif instead of rotating the pixels
-      return await createImageBitmap(someBlob, {
+      // The dom typings still know only the old values of the option
+      const bitmapOptions = {
         imageOrientation: "from-image",
-      });
-    } catch (someError) {
+      } as unknown as ImageBitmapOptions;
+      return await createImageBitmap(someBlob, bitmapOptions);
+    } catch {
       try {
         return await createImageBitmap(someBlob);
-      } catch (anotherError) {
+      } catch {
         // the img element below is the last hope
       }
     }
@@ -290,7 +382,10 @@ async function decodeWithBrowser(someBlob) {
   return loadImageElement(URL.createObjectURL(someBlob), true);
 }
 
-function loadImageElement(sourceUrl, shouldRevoke) {
+function loadImageElement(
+  sourceUrl: string,
+  shouldRevoke: boolean
+): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const imageElement = new Image();
     imageElement.onload = () => {
@@ -309,25 +404,30 @@ function loadImageElement(sourceUrl, shouldRevoke) {
   });
 }
 
-function drawableToPixels(drawableImage, targetWidth, targetHeight) {
+function drawableToPixels(
+  drawableImage: DrawableImage,
+  targetWidth?: number,
+  targetHeight?: number
+): DecodedPixels {
+  const isElement = "naturalWidth" in drawableImage;
   const imageWidth =
     targetWidth ||
-    drawableImage.naturalWidth ||
+    (isElement && (drawableImage as HTMLImageElement).naturalWidth) ||
     drawableImage.width ||
     SVG_FALLBACK_SIZE;
   const imageHeight =
     targetHeight ||
-    drawableImage.naturalHeight ||
+    (isElement && (drawableImage as HTMLImageElement).naturalHeight) ||
     drawableImage.height ||
     SVG_FALLBACK_SIZE;
   guardSize(imageWidth, imageHeight);
   const canvasElement = createCanvas(imageWidth, imageHeight);
-  const drawContext = canvasElement.getContext("2d");
+  const drawContext = getDrawContext(canvasElement);
   drawContext.imageSmoothingEnabled = true;
   drawContext.imageSmoothingQuality = "high";
   drawContext.drawImage(drawableImage, 0, 0, imageWidth, imageHeight);
   const imageData = drawContext.getImageData(0, 0, imageWidth, imageHeight);
-  if (drawableImage.close) {
+  if ("close" in drawableImage) {
     drawableImage.close();
   }
   return {
@@ -337,9 +437,19 @@ function drawableToPixels(drawableImage, targetWidth, targetHeight) {
   };
 }
 
-async function decodeTiffFile(fileBuffer) {
-  const utifModule = await import("utif");
-  const tiffLibrary = utifModule.default || utifModule;
+type TiffLibrary = typeof import("utif");
+
+// Utif is a commonjs module and the bundler does not see its exports, so it
+// comes either as is or wrapped into default depending on the environment
+async function loadTiffLibrary(): Promise<TiffLibrary> {
+  const utifModule: TiffLibrary & { default?: TiffLibrary } = await import(
+    "utif"
+  );
+  return utifModule.default || utifModule;
+}
+
+async function decodeTiffFile(fileBuffer: ArrayBuffer): Promise<DecodedPixels> {
+  const tiffLibrary = await loadTiffLibrary();
   const allPages = tiffLibrary.decode(fileBuffer);
   if (!allPages.length) {
     throw new Error("This tiff has no pages inside");
@@ -355,7 +465,7 @@ async function decodeTiffFile(fileBuffer) {
   };
 }
 
-async function decodeHeicFile(someFile) {
+async function decodeHeicFile(someFile: Blob) {
   const heicModule = await import("heic2any");
   const heicConverter = heicModule.default || heicModule;
   const convertedBlob = await heicConverter({
@@ -370,14 +480,14 @@ async function decodeHeicFile(someFile) {
 
 // Svg has no pixels of its own, so the natural size is only a starting point
 // and the real rasterization happens at the size of the result
-function readSvgSize(svgText) {
+function readSvgSize(svgText: string) {
   const parsedDocument = new DOMParser().parseFromString(
     svgText,
     "image/svg+xml"
   );
   const rootNode = parsedDocument.documentElement;
-  const widthValue = parseFloat(rootNode.getAttribute("width"));
-  const heightValue = parseFloat(rootNode.getAttribute("height"));
+  const widthValue = parseFloat(rootNode.getAttribute("width") || "");
+  const heightValue = parseFloat(rootNode.getAttribute("height") || "");
   if (widthValue > 0 && heightValue > 0) {
     return { width: Math.round(widthValue), height: Math.round(heightValue) };
   }
@@ -393,7 +503,7 @@ function readSvgSize(svgText) {
   return { width: SVG_FALLBACK_SIZE, height: SVG_FALLBACK_SIZE };
 }
 
-export async function decodeImageFile(someFile) {
+export async function decodeImageFile(someFile: File): Promise<SourceImage> {
   const fileBuffer = await readFileAsArrayBuffer(someFile);
   const headBytes = new Uint8Array(
     fileBuffer.slice(0, Math.min(TEXT_DECODER_LIMIT, fileBuffer.byteLength))
@@ -413,25 +523,27 @@ export async function decodeImageFile(someFile) {
     const svgUrl = URL.createObjectURL(
       new Blob([svgText], { type: "image/svg+xml" })
     );
-    const rasterize = async (targetWidth, targetHeight) => {
+    const rasterize = async (targetWidth: number, targetHeight: number) => {
       const svgImage = await loadImageElement(svgUrl, false);
       return drawableToPixels(svgImage, targetWidth, targetHeight);
     };
-    let naturalPixels = null;
+    let naturalPixels: DecodedPixels;
     try {
       naturalPixels = await rasterize(naturalSize.width, naturalSize.height);
     } catch (someError) {
       URL.revokeObjectURL(svgUrl);
       throw someError;
     }
-    return Object.assign({}, commonPart, naturalPixels, {
+    return {
+      ...commonPart,
+      ...naturalPixels,
       isVector: true,
       rasterize,
       release: () => URL.revokeObjectURL(svgUrl),
-    });
+    };
   }
 
-  let decodedImage = null;
+  let decodedImage: DecodedPixels;
   if (inputFormat.decoder === "utif") {
     decodedImage = await decodeTiffFile(fileBuffer);
   } else if (inputFormat.decoder === "heic") {
@@ -439,21 +551,26 @@ export async function decodeImageFile(someFile) {
   } else {
     decodedImage = drawableToPixels(await decodeWithBrowser(someFile));
   }
-  return Object.assign({}, commonPart, decodedImage, {
+  return {
+    ...commonPart,
+    ...decodedImage,
     isVector: false,
     release: () => {},
-  });
+  };
 }
 
 // Crop, then resize, then put the result on a background if it is needed. The
 // source pixels are never touched, so nothing is lost between the runs
-export async function renderPixels(sourceImage, renderPlan) {
+export async function renderPixels(
+  sourceImage: SourceImage,
+  renderPlan: RenderPlan
+): Promise<PixelsStep> {
   const cropRect = renderPlan.cropRect;
   const targetWidth = Math.max(1, Math.round(renderPlan.width));
   const targetHeight = Math.max(1, Math.round(renderPlan.height));
   guardSize(targetWidth, targetHeight);
   const isGammaAware = renderPlan.gammaCorrect !== false;
-  let currentStep = null;
+  let currentStep: PixelsStep;
 
   if (sourceImage.isVector) {
     // A vector source is redrawn at the final resolution, this way the edges
@@ -532,29 +649,27 @@ export async function renderPixels(sourceImage, renderPlan) {
   return currentStep;
 }
 
-export function pixelsToCanvas(sourcePixels, imageWidth, imageHeight) {
+export function pixelsToCanvas(
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number
+) {
   const canvasElement = createCanvas(imageWidth, imageHeight);
-  canvasElement
-    .getContext("2d")
-    .putImageData(
-      new ImageData(
-        new Uint8ClampedArray(sourcePixels),
-        imageWidth,
-        imageHeight
-      ),
-      0,
-      0
-    );
+  getDrawContext(canvasElement).putImageData(
+    new ImageData(new Uint8ClampedArray(sourcePixels), imageWidth, imageHeight),
+    0,
+    0
+  );
   return canvasElement;
 }
 
 function encodeWithCanvas(
-  sourcePixels,
-  imageWidth,
-  imageHeight,
-  oneFormat,
-  qualityValue
-) {
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number,
+  oneFormat: OutputFormat,
+  qualityValue: number
+): Promise<Blob> {
   const canvasElement = pixelsToCanvas(sourcePixels, imageWidth, imageHeight);
   return new Promise((resolve, reject) => {
     canvasElement.toBlob(
@@ -581,7 +696,11 @@ function encodeWithCanvas(
 
 // Bottom up rows, 32 bit with an alpha channel or plain 24 bit when there is
 // nothing to keep transparent
-export function encodeBmp(sourcePixels, imageWidth, imageHeight) {
+export function encodeBmp(
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number
+) {
   const withAlpha = hasTransparentPixels(sourcePixels);
   const headerSize = withAlpha ? 108 : 40;
   const bytesPerPixel = withAlpha ? 4 : 3;
@@ -633,7 +752,11 @@ export function encodeBmp(sourcePixels, imageWidth, imageHeight) {
 }
 
 // The modern icon is simply a png wrapped into the old directory structure
-export function buildIcoFile(pngBytes, imageWidth, imageHeight) {
+export function buildIcoFile(
+  pngBytes: Uint8Array,
+  imageWidth: number,
+  imageHeight: number
+) {
   const headerBytes = new Uint8Array(22);
   const headerView = new DataView(headerBytes.buffer);
   headerView.setUint16(0, 0, true);
@@ -654,12 +777,12 @@ export function buildIcoFile(pngBytes, imageWidth, imageHeight) {
 }
 
 export async function encodePixels(
-  sourcePixels,
-  imageWidth,
-  imageHeight,
-  formatKey,
-  options = {}
-) {
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number,
+  formatKey: string,
+  options: EncodeOptions = {}
+): Promise<Blob> {
   const oneFormat = findOutputFormat(formatKey);
   const qualityValue =
     options.quality === undefined
@@ -691,8 +814,7 @@ export async function encodePixels(
     );
   }
   if (oneFormat.writer === "utif") {
-    const utifModule = await import("utif");
-    const tiffLibrary = utifModule.default || utifModule;
+    const tiffLibrary = await loadTiffLibrary();
     return new Blob(
       [
         tiffLibrary.encodeImage(
@@ -725,7 +847,10 @@ export async function encodePixels(
   throw new Error("Unknown output format");
 }
 
-export function buildOutputFileName(sourceName, oneFormat) {
+export function buildOutputFileName(
+  sourceName: string | null | undefined,
+  oneFormat: OutputFormat
+) {
   const cleanName = String(sourceName || "image").replace(/\.[^.]+$/, "");
   return `${cleanName || "image"}.${oneFormat.extension}`;
 }
