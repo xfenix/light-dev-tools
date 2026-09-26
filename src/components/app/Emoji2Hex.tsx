@@ -6,6 +6,11 @@ import Textarea from "../generic/Textarea";
 import emojiData from "@emoji-mart/data";
 import styled from "styled-components";
 
+// The picker typings are plain any, this is the only part of the object used
+interface PickedEmoji {
+  native: string;
+}
+
 const FlexWrap = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -28,12 +33,11 @@ const OneFlexColumn = styled.div`
 export default function Emoji2HexComponent() {
   const [currentEmojiHexCode, setCurrentEmojiCode] = useState("");
 
-  const convertEmojiPartToCode = (oneEmoji) => {
-    let comp;
+  const convertEmojiPartToCode = (oneEmoji: string) => {
     if (oneEmoji.length === 1) {
-      comp = oneEmoji.charCodeAt(0);
+      return oneEmoji.charCodeAt(0);
     }
-    comp =
+    let comp =
       (oneEmoji.charCodeAt(0) - 0xd800) * 0x400 +
       (oneEmoji.charCodeAt(1) - 0xdc00) +
       0x10000;
@@ -43,9 +47,9 @@ export default function Emoji2HexComponent() {
     return comp;
   };
 
-  const convertEmojiToHex = (emojiNative) => {
-    let outputBuffer = [];
-    for (let letter of emojiNative) {
+  const convertEmojiToHex = (emojiNative: string) => {
+    const outputBuffer: string[] = [];
+    for (const letter of emojiNative) {
       let emojiCode = convertEmojiPartToCode(letter);
       if (isNaN(emojiCode)) {
         emojiCode = letter.charCodeAt(0);
@@ -55,7 +59,7 @@ export default function Emoji2HexComponent() {
     return outputBuffer.join("");
   };
 
-  const onChangeCurrentEmoji = (emojiObject) => {
+  const onChangeCurrentEmoji = (emojiObject: PickedEmoji) => {
     setCurrentEmojiCode(convertEmojiToHex(emojiObject.native));
   };
 

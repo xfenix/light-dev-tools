@@ -13,7 +13,34 @@ const MAX_GIF_SIDE = 65535;
 const HISTOGRAM_BITS = 5;
 const HISTOGRAM_SHIFT = 8 - HISTOGRAM_BITS;
 
-function makeColorBox(colorEntries) {
+export type RgbColor = [number, number, number];
+// Rgba bytes, four per pixel, exactly what the canvas image data holds
+export type PixelBytes = ArrayLike<number>;
+
+interface ColorEntry {
+  red: number;
+  green: number;
+  blue: number;
+  count: number;
+}
+
+interface ColorBox {
+  colorEntries: ColorEntry[];
+  pixelsCount: number;
+  ranges: number[];
+}
+
+export interface PaletteMappingOptions {
+  transparentIndex?: number;
+  dither?: boolean;
+}
+
+export interface GifOptions {
+  transparent?: boolean;
+  dither?: boolean;
+}
+
+function makeColorBox(colorEntries: ColorEntry[]): ColorBox {
   let minRed = 255;
   let minGreen = 255;
   let minBlue = 255;
@@ -38,8 +65,8 @@ function makeColorBox(colorEntries) {
   };
 }
 
-function splitColorBox(oneBox) {
-  const channelNames = ["red", "green", "blue"];
+function splitColorBox(oneBox: ColorBox): [ColorBox, ColorBox] {
+  const channelNames = ["red", "green", "blue"] as const;
   const widestIndex = oneBox.ranges.indexOf(
     Math.max.apply(null, oneBox.ranges)
   );
@@ -64,7 +91,7 @@ function splitColorBox(oneBox) {
   ];
 }
 
-function averageBoxColor(oneBox) {
+function averageBoxColor(oneBox: ColorBox): RgbColor {
   let redSum = 0;
   let greenSum = 0;
   let blueSum = 0;
@@ -91,7 +118,11 @@ function averageBoxColor(oneBox) {
 }
 
 // Opaque colors of the image collapsed into at most colorsLimit entries
-export function buildPalette(sourcePixels, colorsLimit) {
+export function buildPalette(
+  sourcePixels: PixelBytes,
+  colorsLimit: number
+): RgbColor[] {
+  // eslint-disable-next-line no-bitwise
   const bucketsCount = 1 << (HISTOGRAM_BITS * 3);
   const redSums = new Float64Array(bucketsCount);
   const greenSums = new Float64Array(bucketsCount);
@@ -120,7 +151,7 @@ export function buildPalette(sourcePixels, colorsLimit) {
     blueSums[bucketIndex] += blueValue;
     bucketCounts[bucketIndex] += 1;
   }
-  const colorEntries = [];
+  const colorEntries: ColorEntry[] = [];
   for (let bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex += 1) {
     const oneCount = bucketCounts[bucketIndex];
     if (oneCount === 0) {
@@ -137,11 +168,9 @@ export function buildPalette(sourcePixels, colorsLimit) {
     return [[0, 0, 0]];
   }
   if (colorEntries.length <= colorsLimit) {
-    return colorEntries.map((oneEntry) => [
-      oneEntry.red,
-      oneEntry.green,
-      oneEntry.blue,
-    ]);
+    return colorEntries.map(
+      (oneEntry): RgbColor => [oneEntry.red, oneEntry.green, oneEntry.blue]
+    );
   }
   let allBoxes = [makeColorBox(colorEntries)];
   while (allBoxes.length < colorsLimit) {
@@ -173,7 +202,12 @@ export function buildPalette(sourcePixels, colorsLimit) {
   return allBoxes.map(averageBoxColor);
 }
 
-function findNearestColor(paletteColors, redValue, greenValue, blueValue) {
+function findNearestColor(
+  paletteColors: RgbColor[],
+  redValue: number,
+  greenValue: number,
+  blueValue: number
+) {
   let bestIndex = 0;
   let bestDistance = Infinity;
   for (let colorIndex = 0; colorIndex < paletteColors.length; colorIndex += 1) {
@@ -196,20 +230,20 @@ function findNearestColor(paletteColors, redValue, greenValue, blueValue) {
 }
 
 export function mapPixelsToPalette(
-  sourcePixels,
-  imageWidth,
-  imageHeight,
-  paletteColors,
-  options = {}
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number,
+  paletteColors: RgbColor[],
+  options: PaletteMappingOptions = {}
 ) {
   const transparentIndex =
     options.transparentIndex === undefined ? -1 : options.transparentIndex;
-  const isDithered = options.dither !== false;
+  const errorValues =
+    options.dither !== false
+      ? new Float32Array(imageWidth * imageHeight * 3)
+      : null;
   const targetIndexes = new Uint8Array(imageWidth * imageHeight);
-  const cachedIndexes = new Map();
-  const errorValues = isDithered
-    ? new Float32Array(imageWidth * imageHeight * 3)
-    : null;
+  const cachedIndexes = new Map<number, number>();
 
   for (let rowIndex = 0; rowIndex < imageHeight; rowIndex += 1) {
     for (let columnIndex = 0; columnIndex < imageWidth; columnIndex += 1) {
@@ -225,7 +259,7 @@ export function mapPixelsToPalette(
       let redValue = sourcePixels[pixelOffset];
       let greenValue = sourcePixels[pixelOffset + 1];
       let blueValue = sourcePixels[pixelOffset + 2];
-      if (isDithered) {
+      if (errorValues) {
         redValue += errorValues[pixelIndex * 3];
         greenValue += errorValues[pixelIndex * 3 + 1];
         blueValue += errorValues[pixelIndex * 3 + 2];
@@ -248,7 +282,7 @@ export function mapPixelsToPalette(
         cachedIndexes.set(cacheKey, paletteIndex);
       }
       targetIndexes[pixelIndex] = paletteIndex;
-      if (!isDithered) {
+      if (!errorValues) {
         continue;
       }
       const pickedColor = paletteColors[paletteIndex];
@@ -264,12 +298,12 @@ export function mapPixelsToPalette(
 
 // Floyd-Steinberg, the error goes to the right and to the next row
 function spreadError(
-  errorValues,
-  imageWidth,
-  imageHeight,
-  rowIndex,
-  columnIndex,
-  colorError
+  errorValues: Float32Array,
+  imageWidth: number,
+  imageHeight: number,
+  rowIndex: number,
+  columnIndex: number,
+  colorError: RgbColor
 ) {
   const neighbourList = [
     [columnIndex + 1, rowIndex, 7 / 16],
@@ -300,11 +334,11 @@ function spreadError(
 
 // Variable width codes are packed from the least significant bit up
 function makeBitWriter() {
-  const byteValues = [];
+  const byteValues: number[] = [];
   let bitsBuffer = 0;
   let bitsCount = 0;
   return {
-    writeCode(codeValue, codeSize) {
+    writeCode(codeValue: number, codeSize: number) {
       // eslint-disable-next-line no-bitwise
       bitsBuffer |= codeValue << bitsCount;
       bitsCount += codeSize;
@@ -328,14 +362,17 @@ function makeBitWriter() {
   };
 }
 
-export function lzwEncodeIndexes(colorIndexes, minCodeSize) {
+export function lzwEncodeIndexes(
+  colorIndexes: ArrayLike<number>,
+  minCodeSize: number
+) {
   // eslint-disable-next-line no-bitwise
   const clearCode = 1 << minCodeSize;
   const endCode = clearCode + 1;
   const bitWriter = makeBitWriter();
   let codeSize = minCodeSize + 1;
   let nextCode = endCode + 1;
-  let stringTable = new Map();
+  let stringTable = new Map<number, number>();
   let currentCode = colorIndexes.length ? colorIndexes[0] : endCode;
 
   bitWriter.writeCode(clearCode, codeSize);
@@ -372,7 +409,7 @@ export function lzwEncodeIndexes(colorIndexes, minCodeSize) {
   return bitWriter.finish();
 }
 
-function pushSubBlocks(targetBytes, sourceBytes) {
+function pushSubBlocks(targetBytes: number[], sourceBytes: number[]) {
   let blockStart = 0;
   while (blockStart < sourceBytes.length) {
     const blockSize = Math.min(255, sourceBytes.length - blockStart);
@@ -385,12 +422,17 @@ function pushSubBlocks(targetBytes, sourceBytes) {
   targetBytes.push(0);
 }
 
-function pushShort(targetBytes, shortValue) {
+function pushShort(targetBytes: number[], shortValue: number) {
   // eslint-disable-next-line no-bitwise
   targetBytes.push(shortValue & 255, (shortValue >> 8) & 255);
 }
 
-export function encodeGif(sourcePixels, imageWidth, imageHeight, options = {}) {
+export function encodeGif(
+  sourcePixels: PixelBytes,
+  imageWidth: number,
+  imageHeight: number,
+  options: GifOptions = {}
+) {
   if (
     imageWidth < 1 ||
     imageHeight < 1 ||
@@ -415,7 +457,7 @@ export function encodeGif(sourcePixels, imageWidth, imageHeight, options = {}) {
     { transparentIndex, dither: options.dither }
   );
   const fullPalette = hasTransparency
-    ? paletteColors.concat([[0, 0, 0]])
+    ? paletteColors.concat([[0, 0, 0] as RgbColor])
     : paletteColors.slice();
   let paletteBits = 1;
   // eslint-disable-next-line no-bitwise
@@ -425,7 +467,7 @@ export function encodeGif(sourcePixels, imageWidth, imageHeight, options = {}) {
   // eslint-disable-next-line no-bitwise
   const paletteSize = 1 << paletteBits;
 
-  const fileBytes = [];
+  const fileBytes: number[] = [];
   "GIF89a"
     .split("")
     .forEach((oneChar) => fileBytes.push(oneChar.charCodeAt(0)));
@@ -453,7 +495,7 @@ export function encodeGif(sourcePixels, imageWidth, imageHeight, options = {}) {
   return new Uint8Array(fileBytes);
 }
 
-function hasFullyTransparentPixel(sourcePixels) {
+function hasFullyTransparentPixel(sourcePixels: PixelBytes) {
   for (
     let pixelOffset = 3;
     pixelOffset < sourcePixels.length;

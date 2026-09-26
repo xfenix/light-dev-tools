@@ -16,7 +16,19 @@ const TextareaInnerWrapper = styled.form`
   height: 100%;
   width: 100%;
 `;
-const TextareaTag = styled.textarea`
+interface TextareaSizeProps {
+  big?: boolean;
+  medium?: boolean;
+  small?: boolean;
+  smallest?: boolean;
+}
+
+const TextareaTag = styled.textarea<{
+  $big?: boolean;
+  $medium?: boolean;
+  $small?: boolean;
+  $smallest?: boolean;
+}>`
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -66,7 +78,16 @@ const ResetLink = styled.a`
   }
 `;
 
-export default function Textarea(props) {
+type TextareaProps = TextareaSizeProps &
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    label?: string;
+    wrapperClassName?: string;
+    hasClipboardButton?: boolean;
+    compactClipboardButton?: boolean;
+    notHasResetButton?: boolean;
+  };
+
+export default function Textarea(props: TextareaProps) {
   const {
     label,
     wrapperClassName,
@@ -79,16 +100,16 @@ export default function Textarea(props) {
     smallest,
     ...textareaProps
   } = props;
-  const onClipboardButtonClick = (event) => {
+  const onClipboardButtonClick = (event: React.MouseEvent) => {
     const currentFinalValue = props.value ? props.value : props.defaultValue;
     if (currentFinalValue) {
-      copy(currentFinalValue);
+      copy(String(currentFinalValue));
       toast("Copied!");
     }
     event.preventDefault();
   };
 
-  const onResetForm = (event) => {
+  const onResetForm = (event: React.MouseEvent) => {
     // Dont forget to update event fields in case of any interface change
     if (props.onChange) {
       props.onChange(
@@ -96,7 +117,7 @@ export default function Textarea(props) {
           target: {
             value: "",
           },
-        })
+        }) as React.ChangeEvent<HTMLTextAreaElement>
       );
     }
     event.preventDefault();

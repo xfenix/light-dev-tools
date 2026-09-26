@@ -7,15 +7,17 @@ export default function CalculatorComponent() {
   const [currentValue, setCurrentCalcValue] = useState("");
   const [calculatedResultValue, setCalculatedResultValue] = useState("");
 
-  const safeEval = (expressionStr) => {
+  const safeEval = (expressionStr: string): string => {
     return new Function("return " + expressionStr)(); // eslint-disable-line no-new-func
   };
 
-  const onChangeCalc = (event) => {
+  const onChangeCalc = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCurrentCalcValue(event.target.value);
     try {
       setCalculatedResultValue(safeEval(event.target.value));
-    } catch {}
+    } catch {
+      // a half typed expression keeps the last good result
+    }
   };
 
   return (

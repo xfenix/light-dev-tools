@@ -21,7 +21,13 @@ const InputRadio = styled.input`
   display: block;
 `;
 
-export default function RadioGroup(props) {
+interface RadioGroupProps {
+  titleValues: ReadonlyArray<string>;
+  groupKey: string;
+  onChange?: (someEvent: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export default function RadioGroup(props: RadioGroupProps) {
   return (
     <AllRadios>
       {props.titleValues.map((hashTitle, hashIndex) => {

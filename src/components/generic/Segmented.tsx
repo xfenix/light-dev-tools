@@ -9,7 +9,7 @@ const SegmentedBox = styled.div`
   gap: 8px;
 `;
 
-const OneSegment = styled.label`
+const OneSegment = styled.label<{ $isActive: boolean }>`
   position: relative;
   display: block;
   padding: 7px 14px;
@@ -43,7 +43,14 @@ const HiddenRadio = styled.input`
   cursor: pointer;
 `;
 
-export default function Segmented(props) {
+interface SegmentedProps {
+  titleValues: ReadonlyArray<string | number>;
+  value: string | number;
+  groupKey: string;
+  onChange?: (someEvent: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export default function Segmented(props: SegmentedProps) {
   const currentValue = String(props.value);
   return (
     <SegmentedBox>

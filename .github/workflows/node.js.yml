@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 22.x
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run predeploy
       - name: Publish
