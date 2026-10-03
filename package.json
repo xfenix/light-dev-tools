@@ -25,6 +25,7 @@
     "heic2any": "^0.0.4",
     "js-base64": "^3.9.4",
     "jshashes": "^1.0.8",
+    "jsqr": "^1.4.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.0",
     "react-color": "^2.19.3",

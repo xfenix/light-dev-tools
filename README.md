@@ -10,6 +10,7 @@ Current tools support:
 - Emoji picker
 - Color picker
 - QR code generator
+- QR code reader (file, clipboard or camera)
 - Image converter with resize and crop
 - More tools currently under development...
 
